@@ -156,6 +156,7 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
   }
 
   for (const existing of existingBookings) {
+    if (newBooking._id && String(existing._id) === String(newBooking._id)) continue;
     const existingOccurrences = expandOccurrences(existing, untilIso);
     const existingRiders = bookingRiders(existing);
     for (const next of newOccurrences) {

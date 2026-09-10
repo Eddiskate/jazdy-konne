@@ -85,4 +85,8 @@ export class ApiService {
   cancelSeries(bookingId: string, from: string) {
     return this.http.post(this.url(`/api/bookings/${bookingId}/cancel-series`), { from });
   }
+
+  updateBooking(bookingId: string, payload: { riders: { childId: string; horseId: string }[] }) {
+    return this.http.put(this.url(`/api/bookings/${bookingId}`), payload);
+  }
 }

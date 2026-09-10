@@ -99,6 +99,65 @@ bookingsRouter.post('/', async (req, res, next) => {
   }
 });
 
+bookingsRouter.put('/:id', async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Nie znaleziono jazdy.' });
+
+    const riders = normalizeRiders(req.body);
+    if (!riders.length) {
+      return res.status(400).json({ error: 'Dodaj przynajmniej jeden zestaw dziecko + koń.' });
+    }
+
+    const [children, horses] = await Promise.all([
+      Child.find({ _id: { $in: riders.map((rider) => rider.childId) } }),
+      Horse.find({ _id: { $in: riders.map((rider) => rider.horseId) } }),
+    ]);
+    const childIds = new Set(children.map((child) => String(child._id)));
+    const horseIds = new Set(horses.map((horse) => String(horse._id)));
+    if (riders.some((rider) => !childIds.has(String(rider.childId)))) {
+      return res.status(404).json({ error: 'Nie znaleziono dziecka.' });
+    }
+    if (riders.some((rider) => !horseIds.has(String(rider.horseId)))) {
+      return res.status(404).json({ error: 'Nie znaleziono konia.' });
+    }
+
+    const startDt = parseWarsaw(booking.start);
+    const draft = {
+      _id: booking._id,
+      instructorId: booking.instructorId,
+      riders,
+      start: booking.start,
+      durationMinutes: booking.durationMinutes,
+      recurrence: booking.recurrence,
+      cancelledDates: booking.cancelledDates,
+      seriesEndedAt: booking.seriesEndedAt,
+    };
+
+    const horizon = startDt.plus({ weeks: 16 }).toISO();
+    const existing = await Booking.find({
+      _id: { $ne: booking._id },
+      $or: [{ seriesEndedAt: null }, { seriesEndedAt: { $gt: startDt.toJSDate() } }],
+    });
+
+    const conflicts = findConflicts(draft, existing, horizon);
+    if (conflicts.length) {
+      return res.status(409).json({
+        error: conflicts[0].message,
+        conflicts,
+      });
+    }
+
+    booking.riders = riders;
+    booking.childId = riders[0].childId;
+    booking.horseId = riders[0].horseId;
+    await booking.save();
+    res.json(booking);
+  } catch (error) {
+    next(error);
+  }
+});
+
 bookingsRouter.post('/:id/cancel', async (req, res, next) => {
   try {
     const booking = await Booking.findById(req.params.id);

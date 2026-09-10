@@ -159,6 +159,36 @@
           </li>
         }
       </ul>
+      @for (pair of extraPairs; track pair.key; let i = $index) {
+        <fieldset class="pair">
+          <legend>Nowy zestaw {{ i + 1 }}</legend>
+          <button type="button" class="text danger pair-remove" (click)="removePair(pair.key)">Usuń</button>
+          <label class="field">
+            <span>Dziecko</span>
+            <select [(ngModel)]="pair.childId" [name]="'edit-child-' + pair.key">
+              @for (child of children; track child._id) {
+                <option [value]="child._id">
+                  {{ personName(child) }} · {{ child.hourlyRate }} zł/h · {{ child.preferredHours.from }}–{{ child.preferredHours.to }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            <span>Koń</span>
+            <select [(ngModel)]="pair.horseId" [name]="'edit-horse-' + pair.key">
+              @for (horse of horses; track horse._id) {
+                <option [value]="horse._id">{{ horse.name }}</option>
+              }
+            </select>
+          </label>
+        </fieldset>
+      }
+      <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
+      @if (extraPairs.length) {
+        <button type="button" class="button save-extra" [disabled]="saving" (click)="saveExtraRiders()">
+          {{ saving ? 'Zapisywanie…' : 'Zapisz zestawy' }}
+        </button>
+      }
       @if (formError) {
         <p class="banner error">{{ formError }}</p>
       }
@@ -167,7 +197,7 @@
           Anuluj tę jazdę
         </button>
         @if (detailSlot!.booking!.recurring) {
-          <button type="button" class="ghost" [disabled]="saving" (click)="cancelSeries()">
+          <button type="button" class="text" [disabled]="saving" (click)="cancelSeries()">
             Anuluj całą serię od tego terminu
           </button>
         }

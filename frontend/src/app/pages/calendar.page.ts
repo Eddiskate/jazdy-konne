@@ -50,6 +50,7 @@ export class CalendarPage implements OnInit {
   bookingSlot: CalendarSlot | null = null;
   detailSlot: CalendarSlot | null = null;
   pairs: RiderDraft[] = [];
+  extraPairs: RiderDraft[] = [];
   recurrence: 'none' | 'interval' = 'none';
   intervalDays = 7;
   saving = false;
@@ -126,10 +127,18 @@ export class CalendarPage implements OnInit {
   }
 
   addPair(): void {
+    if (this.detailSlot) {
+      this.extraPairs = [...this.extraPairs, this.newPair()];
+      return;
+    }
     this.pairs = [...this.pairs, this.newPair()];
   }
 
   removePair(key: number): void {
+    if (this.detailSlot) {
+      this.extraPairs = this.extraPairs.filter((pair) => pair.key !== key);
+      return;
+    }
     if (this.pairs.length <= 1) return;
     this.pairs = this.pairs.filter((pair) => pair.key !== key);
   }
@@ -137,12 +146,14 @@ export class CalendarPage implements OnInit {
   openDetail(slot: CalendarSlot): void {
     this.detailSlot = slot;
     this.bookingSlot = null;
+    this.extraPairs = [];
     this.formError = '';
   }
 
   closePanels(): void {
     this.bookingSlot = null;
     this.detailSlot = null;
+    this.extraPairs = [];
     this.formError = '';
     this.saving = false;
   }
@@ -187,6 +198,44 @@ export class CalendarPage implements OnInit {
           this.formError = apiErrorMessage(error, 'Nie udało się obsadzić slotu.');
         },
       });
+  }
+
+  saveExtraRiders(): void {
+    if (!this.detailSlot?.booking) return;
+    const existing = bookingRiders(this.detailSlot.booking).map((rider) => ({
+      childId: rider.child.id,
+      horseId: rider.horse.id,
+    }));
+    const added = this.extraPairs
+      .map((pair) => ({ childId: pair.childId, horseId: pair.horseId }))
+      .filter((pair) => pair.childId && pair.horseId);
+    const riders = [...existing, ...added];
+    const childIds = riders.map((rider) => rider.childId);
+    const horseIds = riders.map((rider) => rider.horseId);
+    if (!added.length) {
+      this.formError = 'Dodaj przynajmniej jeden nowy zestaw.';
+      return;
+    }
+    if (new Set(childIds).size !== childIds.length) {
+      this.formError = 'To samo dziecko nie może być dwa razy w jednym slocie.';
+      return;
+    }
+    if (new Set(horseIds).size !== horseIds.length) {
+      this.formError = 'Ten sam koń nie może być dwa razy w jednym slocie.';
+      return;
+    }
+    this.saving = true;
+    this.formError = '';
+    this.api.updateBooking(this.detailSlot.booking.id, { riders }).subscribe({
+      next: () => {
+        this.closePanels();
+        this.loadCalendar();
+      },
+      error: (error) => {
+        this.saving = false;
+        this.formError = apiErrorMessage(error, 'Nie udało się dodać zestawu.');
+      },
+    });
   }
 
   cancelOccurrence(): void {
@@ -240,14 +289,27 @@ export class CalendarPage implements OnInit {
   }
 
   private newPair(): RiderDraft {
-    const usedChildren = new Set(this.pairs.map((pair) => pair.childId));
-    const usedHorses = new Set(this.pairs.map((pair) => pair.horseId));
-    const child = this.children.find((item) => !usedChildren.has(item._id)) || this.children[0];
-    const horse = this.horses.find((item) => !usedHorses.has(item._id)) || this.horses[0];
+    const used = this.usedRiderIds();
+    const child = this.children.find((item) => !used.children.has(item._id)) || this.children[0];
+    const horse = this.horses.find((item) => !used.horses.has(item._id)) || this.horses[0];
     return {
       key: this.pairKey++,
       childId: child?._id || '',
       horseId: horse?._id || '',
+    };
+  }
+
+  private usedRiderIds(): { children: Set<string>; horses: Set<string> } {
+    if (this.detailSlot?.booking) {
+      const riders = bookingRiders(this.detailSlot.booking);
+      return {
+        children: new Set([...riders.map((rider) => rider.child.id), ...this.extraPairs.map((pair) => pair.childId)]),
+        horses: new Set([...riders.map((rider) => rider.horse.id), ...this.extraPairs.map((pair) => pair.horseId)]),
+      };
+    }
+    return {
+      children: new Set(this.pairs.map((pair) => pair.childId)),
+      horses: new Set(this.pairs.map((pair) => pair.horseId)),
     };
   }
 
