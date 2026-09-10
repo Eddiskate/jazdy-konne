@@ -34,8 +34,11 @@ export interface Horse {
 }
 
 export interface SlotRider {
+  bookingId: string;
   child: Pick<Child, 'firstName' | 'lastName' | 'hourlyRate' | 'preferredHours'> & { id: string };
   horse: { id: string; name: string };
+  recurring: boolean;
+  intervalDays: number | null;
   outsideChildPreference: boolean;
 }
 
@@ -53,7 +56,14 @@ export interface SlotBooking {
 export function bookingRiders(booking: SlotBooking | null | undefined): SlotRider[] {
   if (booking?.riders?.length) return booking.riders;
   if (booking?.child && booking?.horse) {
-    return [{ child: booking.child, horse: booking.horse, outsideChildPreference: booking.outsideChildPreference }];
+    return [{
+      bookingId: booking.id,
+      child: booking.child,
+      horse: booking.horse,
+      recurring: booking.recurring,
+      intervalDays: booking.intervalDays,
+      outsideChildPreference: booking.outsideChildPreference,
+    }];
   }
   return [];
 }

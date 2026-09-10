@@ -13,24 +13,51 @@ import {
 
 export const bookingsRouter = Router();
 
+function parseRecurrence(recurrence) {
+  const type = recurrence?.type === 'interval' ? 'interval' : 'none';
+  const intervalDays = type === 'interval' ? Number(recurrence.intervalDays) : null;
+  if (type === 'interval' && (!intervalDays || intervalDays < 1)) {
+    return { error: 'Podaj co ile dni ma się powtarzać jazda.' };
+  }
+  return { value: { type, intervalDays } };
+}
+
 function normalizeRiders(body) {
+  const fallback = body.recurrence;
   if (Array.isArray(body.riders) && body.riders.length) {
     return body.riders
       .map((rider) => ({
         childId: rider.childId,
         horseId: rider.horseId,
+        recurrence: rider.recurrence || fallback,
       }))
       .filter((rider) => rider.childId && rider.horseId);
   }
   if (body.childId && body.horseId) {
-    return [{ childId: body.childId, horseId: body.horseId }];
+    return [{ childId: body.childId, horseId: body.horseId, recurrence: fallback }];
   }
   return [];
 }
 
+async function validateRiderIds(riders) {
+  const [children, horses] = await Promise.all([
+    Child.find({ _id: { $in: riders.map((rider) => rider.childId) } }),
+    Horse.find({ _id: { $in: riders.map((rider) => rider.horseId) } }),
+  ]);
+  const childIds = new Set(children.map((child) => String(child._id)));
+  const horseIds = new Set(horses.map((horse) => String(horse._id)));
+  if (riders.some((rider) => !childIds.has(String(rider.childId)))) {
+    return 'Nie znaleziono dziecka.';
+  }
+  if (riders.some((rider) => !horseIds.has(String(rider.horseId)))) {
+    return 'Nie znaleziono konia.';
+  }
+  return null;
+}
+
 bookingsRouter.post('/', async (req, res, next) => {
   try {
-    const { instructorId, start, recurrence } = req.body;
+    const { instructorId, start } = req.body;
     const riders = normalizeRiders(req.body);
     if (!instructorId || !start || !riders.length) {
       return res.status(400).json({ error: 'Wymagane: instruktor, termin oraz przynajmniej jeden zestaw dziecko + koń.' });
@@ -39,18 +66,8 @@ bookingsRouter.post('/', async (req, res, next) => {
     const instructor = await Instructor.findById(instructorId);
     if (!instructor) return res.status(404).json({ error: 'Nie znaleziono instruktora.' });
 
-    const [children, horses] = await Promise.all([
-      Child.find({ _id: { $in: riders.map((rider) => rider.childId) } }),
-      Horse.find({ _id: { $in: riders.map((rider) => rider.horseId) } }),
-    ]);
-    const childIds = new Set(children.map((child) => String(child._id)));
-    const horseIds = new Set(horses.map((horse) => String(horse._id)));
-    if (riders.some((rider) => !childIds.has(String(rider.childId)))) {
-      return res.status(404).json({ error: 'Nie znaleziono dziecka.' });
-    }
-    if (riders.some((rider) => !horseIds.has(String(rider.horseId)))) {
-      return res.status(404).json({ error: 'Nie znaleziono konia.' });
-    }
+    const invalid = await validateRiderIds(riders);
+    if (invalid) return res.status(404).json({ error: invalid });
 
     const startDt = parseWarsaw(start);
     if (!startDt.isValid) {
@@ -61,98 +78,42 @@ bookingsRouter.post('/', async (req, res, next) => {
       return res.status(400).json({ error: 'Ten termin nie mieści się w godzinach instruktora.' });
     }
 
-    const recurrenceType = recurrence?.type === 'interval' ? 'interval' : 'none';
-    const intervalDays = recurrenceType === 'interval' ? Number(recurrence.intervalDays) : null;
-    if (recurrenceType === 'interval' && (!intervalDays || intervalDays < 1)) {
-      return res.status(400).json({ error: 'Podaj co ile dni ma się powtarzać jazda.' });
+    const drafts = [];
+    for (const rider of riders) {
+      const parsed = parseRecurrence(rider.recurrence);
+      if (parsed.error) return res.status(400).json({ error: parsed.error });
+      drafts.push({
+        instructorId,
+        riders: [{ childId: rider.childId, horseId: rider.horseId }],
+        childId: rider.childId,
+        horseId: rider.horseId,
+        start: startDt.toJSDate(),
+        durationMinutes: SLOT_MINUTES,
+        recurrence: parsed.value,
+        cancelledDates: [],
+        seriesEndedAt: null,
+      });
     }
-
-    const draft = {
-      instructorId,
-      riders,
-      childId: riders[0].childId,
-      horseId: riders[0].horseId,
-      start: startDt.toJSDate(),
-      durationMinutes: SLOT_MINUTES,
-      recurrence: { type: recurrenceType, intervalDays },
-      cancelledDates: [],
-      seriesEndedAt: null,
-    };
 
     const horizon = startDt.plus({ weeks: 16 }).toISO();
     const existing = await Booking.find({
       $or: [{ seriesEndedAt: null }, { seriesEndedAt: { $gt: startDt.toJSDate() } }],
     });
 
-    const conflicts = findConflicts(draft, existing, horizon);
-    if (conflicts.length) {
-      return res.status(409).json({
-        error: conflicts[0].message,
-        conflicts,
-      });
+    const createdSoFar = [];
+    for (const draft of drafts) {
+      const conflicts = findConflicts(draft, [...existing, ...createdSoFar], horizon);
+      if (conflicts.length) {
+        return res.status(409).json({
+          error: conflicts[0].message,
+          conflicts,
+        });
+      }
+      createdSoFar.push(draft);
     }
 
-    const booking = await Booking.create(draft);
-    res.status(201).json(booking);
-  } catch (error) {
-    next(error);
-  }
-});
-
-bookingsRouter.put('/:id', async (req, res, next) => {
-  try {
-    const booking = await Booking.findById(req.params.id);
-    if (!booking) return res.status(404).json({ error: 'Nie znaleziono jazdy.' });
-
-    const riders = normalizeRiders(req.body);
-    if (!riders.length) {
-      return res.status(400).json({ error: 'Dodaj przynajmniej jeden zestaw dziecko + koń.' });
-    }
-
-    const [children, horses] = await Promise.all([
-      Child.find({ _id: { $in: riders.map((rider) => rider.childId) } }),
-      Horse.find({ _id: { $in: riders.map((rider) => rider.horseId) } }),
-    ]);
-    const childIds = new Set(children.map((child) => String(child._id)));
-    const horseIds = new Set(horses.map((horse) => String(horse._id)));
-    if (riders.some((rider) => !childIds.has(String(rider.childId)))) {
-      return res.status(404).json({ error: 'Nie znaleziono dziecka.' });
-    }
-    if (riders.some((rider) => !horseIds.has(String(rider.horseId)))) {
-      return res.status(404).json({ error: 'Nie znaleziono konia.' });
-    }
-
-    const startDt = parseWarsaw(booking.start);
-    const draft = {
-      _id: booking._id,
-      instructorId: booking.instructorId,
-      riders,
-      start: booking.start,
-      durationMinutes: booking.durationMinutes,
-      recurrence: booking.recurrence,
-      cancelledDates: booking.cancelledDates,
-      seriesEndedAt: booking.seriesEndedAt,
-    };
-
-    const horizon = startDt.plus({ weeks: 16 }).toISO();
-    const existing = await Booking.find({
-      _id: { $ne: booking._id },
-      $or: [{ seriesEndedAt: null }, { seriesEndedAt: { $gt: startDt.toJSDate() } }],
-    });
-
-    const conflicts = findConflicts(draft, existing, horizon);
-    if (conflicts.length) {
-      return res.status(409).json({
-        error: conflicts[0].message,
-        conflicts,
-      });
-    }
-
-    booking.riders = riders;
-    booking.childId = riders[0].childId;
-    booking.horseId = riders[0].horseId;
-    await booking.save();
-    res.json(booking);
+    const bookings = await Booking.insertMany(drafts);
+    res.status(201).json(bookings);
   } catch (error) {
     next(error);
   }

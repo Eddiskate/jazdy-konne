@@ -47,36 +47,41 @@ calendarRouter.get('/', async (req, res, next) => {
     const horseMap = Object.fromEntries(horses.map((horse) => [String(horse._id), horse]));
 
     const slots = generateSlotsForInstructor(instructor, fromDt.toISO(), toDt.toISO()).map((slot) => {
-      const match = bookings.find((booking) => bookingOccursAt(booking, slot.start));
-      if (!match) {
+      const matches = bookings.filter((booking) => bookingOccursAt(booking, slot.start));
+      if (!matches.length) {
         return { ...slot, booking: null };
       }
 
-      const riders = bookingRiders(match)
-        .map((rider) => {
-          const child = childMap[String(rider.childId)];
-          const horse = horseMap[String(rider.horseId)];
-          return {
-            child: mapChild(child),
-            horse: horse ? { id: horse._id, name: horse.name } : null,
-            outsideChildPreference: child
-              ? isOutsideChildPreference(child, slot.start, match.durationMinutes || SLOT_MINUTES)
-              : false,
-          };
-        })
-        .filter((rider) => rider.child && rider.horse);
+      const riders = matches.flatMap((match) =>
+        bookingRiders(match)
+          .map((rider) => {
+            const child = childMap[String(rider.childId)];
+            const horse = horseMap[String(rider.horseId)];
+            return {
+              bookingId: match._id,
+              child: mapChild(child),
+              horse: horse ? { id: horse._id, name: horse.name } : null,
+              recurring: match.recurrence?.type === 'interval',
+              intervalDays: match.recurrence?.intervalDays || null,
+              outsideChildPreference: child
+                ? isOutsideChildPreference(child, slot.start, match.durationMinutes || SLOT_MINUTES)
+                : false,
+            };
+          })
+          .filter((rider) => rider.child && rider.horse),
+      );
 
       const first = riders[0];
       return {
         ...slot,
         booking: {
-          id: match._id,
+          id: matches[0]._id,
           riders,
           child: first?.child || null,
           horse: first?.horse || null,
-          recurring: match.recurrence?.type === 'interval',
-          intervalDays: match.recurrence?.intervalDays || null,
-          seriesStart: match.start,
+          recurring: riders.some((rider) => rider.recurring),
+          intervalDays: first?.intervalDays || null,
+          seriesStart: matches[0].start,
           outsideChildPreference: riders.some((rider) => rider.outsideChildPreference),
         },
       };

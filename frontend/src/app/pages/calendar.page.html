@@ -49,13 +49,11 @@
               <button type="button" class="slot filled" (click)="openDetail(slot)">
                 <div class="slot-top">
                   <time>{{ formatTime(slot.start) }}</time>
-                  <span class="badge" [class.repeat]="slot.booking.recurring">
-                    {{ recurrenceLabel(slot) }}
-                  </span>
                 </div>
-                @for (rider of ridersOf(slot.booking); track rider.child.id) {
+                @for (rider of ridersOf(slot.booking); track rider.bookingId + rider.child.id) {
                   <strong>{{ personName(rider.child) }}</strong>
                   <span>{{ rider.horse.name }} · {{ rider.child.hourlyRate }} zł/h</span>
+                  <em class="badge" [class.repeat]="rider.recurring">{{ riderRecurrence(rider) }}</em>
                 }
               </button>
             } @else {
@@ -102,31 +100,23 @@
               }
             </select>
           </label>
+          <fieldset class="field compact-rec">
+            <legend>Powtarzalność</legend>
+            <label class="radio">
+              <input type="radio" [name]="'rec-' + pair.key" [(ngModel)]="pair.recurrence" value="none" />
+              Jednorazowo
+            </label>
+            <label class="radio">
+              <input type="radio" [name]="'rec-' + pair.key" [(ngModel)]="pair.recurrence" value="interval" />
+              Co
+              <input type="number" min="1" max="30" [(ngModel)]="pair.intervalDays" [name]="'days-' + pair.key" [disabled]="pair.recurrence !== 'interval'" />
+              dni
+            </label>
+          </fieldset>
         </fieldset>
       }
 
       <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
-
-      <fieldset class="field">
-        <legend>Powtarzalność</legend>
-        <label class="radio">
-          <input type="radio" name="recurrence" [(ngModel)]="recurrence" value="none" />
-          Jednorazowo
-        </label>
-        <label class="radio">
-          <input type="radio" name="recurrence" [(ngModel)]="recurrence" value="interval" />
-          Co
-          <input type="number" min="1" max="30" [(ngModel)]="intervalDays" [disabled]="recurrence !== 'interval'" />
-          dni
-        </label>
-      </fieldset>
-
-      @if (recurrence === 'interval') {
-        <p class="hint">
-          Kolejne jazdy w tym samym slocie godzinowym pojawią się automatycznie.
-          Anulowanie jednego terminu znów otworzy ten slot.
-        </p>
-      }
 
       @if (formError) {
         <p class="banner error">{{ formError }}</p>
@@ -147,15 +137,26 @@
     <div class="dialog" (click)="$event.stopPropagation()">
       <p class="eyebrow">Szczegóły jazdy</p>
       <h2>{{ slotTitle(detailSlot!) }}</h2>
-      <p class="muted">{{ formatDateTime(detailSlot!.start) }} · {{ recurrenceLabel(detailSlot!) }}</p>
+      <p class="muted">{{ formatDateTime(detailSlot!.start) }}</p>
       <ul class="rider-list">
-        @for (rider of ridersOf(detailSlot!.booking); track rider.child.id) {
+        @for (rider of ridersOf(detailSlot!.booking); track rider.bookingId + rider.child.id) {
           <li>
             <strong>{{ personName(rider.child) }}</strong>
             <span>{{ rider.horse.name }} · {{ rider.child.hourlyRate }} zł/h</span>
+            <em class="badge" [class.repeat]="rider.recurring">{{ riderRecurrence(rider) }}</em>
             @if (rider.outsideChildPreference) {
               <em>poza preferowanymi godzinami</em>
             }
+            <div class="rider-actions">
+              <button type="button" class="text danger" [disabled]="saving" (click)="cancelRider(rider)">
+                Anuluj ten zestaw
+              </button>
+              @if (rider.recurring) {
+                <button type="button" class="text" [disabled]="saving" (click)="cancelRiderSeries(rider)">
+                  Anuluj serię
+                </button>
+              }
+            </div>
           </li>
         }
       </ul>
@@ -181,6 +182,19 @@
               }
             </select>
           </label>
+          <fieldset class="field compact-rec">
+            <legend>Powtarzalność</legend>
+            <label class="radio">
+              <input type="radio" [name]="'edit-rec-' + pair.key" [(ngModel)]="pair.recurrence" value="none" />
+              Jednorazowo
+            </label>
+            <label class="radio">
+              <input type="radio" [name]="'edit-rec-' + pair.key" [(ngModel)]="pair.recurrence" value="interval" />
+              Co
+              <input type="number" min="1" max="30" [(ngModel)]="pair.intervalDays" [name]="'edit-days-' + pair.key" [disabled]="pair.recurrence !== 'interval'" />
+              dni
+            </label>
+          </fieldset>
         </fieldset>
       }
       <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
@@ -193,14 +207,9 @@
         <p class="banner error">{{ formError }}</p>
       }
       <div class="actions stack">
-        <button type="button" class="button danger" [disabled]="saving" (click)="cancelOccurrence()">
-          Anuluj tę jazdę
+        <button type="button" class="button danger" [disabled]="saving" (click)="cancelAllInSlot()">
+          Anuluj wszystkich w tym terminie
         </button>
-        @if (detailSlot!.booking!.recurring) {
-          <button type="button" class="text" [disabled]="saving" (click)="cancelSeries()">
-            Anuluj całą serię od tego terminu
-          </button>
-        }
         <button type="button" class="text" (click)="closePanels()">Zamknij</button>
       </div>
     </div>

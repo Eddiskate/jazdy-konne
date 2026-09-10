@@ -69,9 +69,12 @@ export class ApiService {
 
   createBooking(payload: {
     instructorId: string;
-    riders: { childId: string; horseId: string }[];
     start: string;
-    recurrence: { type: 'none' } | { type: 'interval'; intervalDays: number };
+    riders: {
+      childId: string;
+      horseId: string;
+      recurrence: { type: 'none' } | { type: 'interval'; intervalDays: number };
+    }[];
   }) {
     return this.http.post(this.url('/api/bookings'), payload).pipe(
       catchError((error) => throwError(() => error)),
@@ -86,7 +89,4 @@ export class ApiService {
     return this.http.post(this.url(`/api/bookings/${bookingId}/cancel-series`), { from });
   }
 
-  updateBooking(bookingId: string, payload: { riders: { childId: string; horseId: string }[] }) {
-    return this.http.put(this.url(`/api/bookings/${bookingId}`), payload);
-  }
 }

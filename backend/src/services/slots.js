@@ -163,13 +163,6 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
       for (const taken of existingOccurrences) {
         if (!sameInstant(next, taken)) continue;
 
-        if (String(existing.instructorId) === String(newBooking.instructorId)) {
-          conflicts.push({
-            type: 'instructor',
-            at: next.toISO(),
-            message: 'Instruktor ma już jazdę w tym slocie.',
-          });
-        }
         for (const rider of newRiders) {
           if (existingRiders.some((takenRider) => String(takenRider.childId) === String(rider.childId))) {
             conflicts.push({
