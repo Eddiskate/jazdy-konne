@@ -30,9 +30,10 @@ Przy pierwszym starcie API doda przykładowych instruktorów, dzieci i konie, je
 
 Dwa serwisy **App** (Dockerfile) + Mongo w tym samym projekcie — tak jak w harvest-moon.
 
-### Backend (`backend/`)
+### Backend (API)
 
-Builder: **Dockerfile**, build path `/backend`.
+Builder: **Dockerfile**. Domyślny build path `/` (plik `Dockerfile` w katalogu głównym).
+Albo build path `/backend`.
 
 | Zmienna | Przykład |
 |--------|----------|

@@ -1,0 +1,12 @@
+node_modules
+backend/node_modules
+frontend
+.git
+.angular
+dist
+*.log
+.env
+.DS_Store
+README.md
+package.json
+package-lock.json
