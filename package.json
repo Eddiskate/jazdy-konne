@@ -1,0 +1,11 @@
+{
+  "name": "jazdy-konne",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm run dev --prefix backend\" \"npm start --prefix frontend -- --proxy-config proxy.conf.json\"",
+    "seed": "npm run seed --prefix backend"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

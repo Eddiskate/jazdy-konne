@@ -1,0 +1,54 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Stajnia</p>
+      <h1>Konie</h1>
+    </div>
+    <button type="button" class="button" (click)="startCreate()">Dodaj konia</button>
+  </header>
+
+  @if (error && !open) {
+    <p class="banner error">{{ error }}</p>
+  }
+
+  <div class="cards">
+    @for (horse of horses; track horse._id) {
+      <article class="card">
+        <div>
+          <h2>{{ horse.name }}</h2>
+        </div>
+        <div class="actions">
+          <button type="button" class="text" (click)="startEdit(horse)">Edytuj</button>
+          <button type="button" class="text danger" (click)="remove(horse)">Usuń</button>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted">Nie ma jeszcze koni.</p>
+    }
+  </div>
+</section>
+
+@if (open) {
+  <div class="overlay" (click)="close()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <p class="eyebrow">{{ editingId ? 'Edycja' : 'Nowy koń' }}</p>
+      <h2>{{ editingId ? 'Zmień imię' : 'Dodaj konia' }}</h2>
+
+      <label class="field">
+        <span>Imię</span>
+        <input [(ngModel)]="name" />
+      </label>
+
+      @if (error) {
+        <p class="banner error">{{ error }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="text" (click)="close()">Anuluj</button>
+        <button type="button" class="button" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Zapisywanie…' : 'Zapisz' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,174 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Planer jazd</p>
+      <h1>Kalendarz</h1>
+    </div>
+    <div class="toolbar">
+      <label class="field compact">
+        <span>Instruktor</span>
+        <select [(ngModel)]="instructorId" (ngModelChange)="loadCalendar()">
+          <option value="" disabled>Wybierz instruktora</option>
+          @for (instructor of instructors; track instructor._id) {
+            <option [value]="instructor._id">{{ personName(instructor) }}</option>
+          }
+        </select>
+      </label>
+      <div class="week-nav">
+        <button type="button" class="ghost" (click)="prevWeek()" aria-label="Poprzedni tydzień">‹</button>
+        <strong>{{ weekLabel }}</strong>
+        <button type="button" class="ghost" (click)="nextWeek()" aria-label="Następny tydzień">›</button>
+        <button type="button" class="text" (click)="today()">Dziś</button>
+      </div>
+    </div>
+  </header>
+
+  @if (error) {
+    <p class="banner error">{{ error }}</p>
+  }
+
+  @if (!instructors.length) {
+    <div class="empty-card">
+      <h2>Najpierw dodaj instruktora</h2>
+      <p>Kalendarz pokazuje sloty z jego preferowanych godzin poniedziałek–niedziela.</p>
+      <a routerLink="/instruktorzy" class="button">Przejdź do instruktorów</a>
+    </div>
+  } @else {
+    <div class="week" [class.loading]="loading">
+      @for (day of days; track day.key) {
+        <article class="day">
+          <header>
+            <h2>{{ day.label }}</h2>
+            <span>{{ day.slots.length }} slotów</span>
+          </header>
+          @if (!day.slots.length) {
+            <p class="muted">Brak godzin pracy</p>
+          }
+          @for (slot of day.slots; track slot.start) {
+            @if (slot.booking) {
+              <button type="button" class="slot filled" (click)="openDetail(slot)">
+                <div class="slot-top">
+                  <time>{{ formatTime(slot.start) }}</time>
+                  <span class="badge" [class.repeat]="slot.booking.recurring">
+                    {{ recurrenceLabel(slot) }}
+                  </span>
+                </div>
+                <strong>{{ personName(slot.booking.child) }}</strong>
+                <span>{{ slot.booking.horse.name }}</span>
+                <em>{{ slot.booking.child.hourlyRate }} zł/h</em>
+              </button>
+            } @else {
+              <button type="button" class="slot empty" (click)="openBooking(slot)">
+                <time>{{ formatTime(slot.start) }}</time>
+                <span>Obsadź jazdę</span>
+              </button>
+            }
+          }
+        </article>
+      }
+    </div>
+  }
+</section>
+
+@if (bookingSlot) {
+  <div class="overlay" (click)="closePanels()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <p class="eyebrow">Nowy termin</p>
+      <h2>Obsadź slot</h2>
+      <p class="muted">{{ formatDateTime(bookingSlot.start) }}</p>
+
+      <label class="field">
+        <span>Dziecko</span>
+        <select [(ngModel)]="childId">
+          @for (child of children; track child._id) {
+            <option [value]="child._id">
+              {{ personName(child) }} · {{ child.hourlyRate }} zł/h · {{ child.preferredHours.from }}–{{ child.preferredHours.to }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <label class="field">
+        <span>Koń</span>
+        <select [(ngModel)]="horseId">
+          @for (horse of horses; track horse._id) {
+            <option [value]="horse._id">{{ horse.name }}</option>
+          }
+        </select>
+      </label>
+
+      <fieldset class="field">
+        <legend>Powtarzalność</legend>
+        <label class="radio">
+          <input type="radio" name="recurrence" [(ngModel)]="recurrence" value="none" />
+          Jednorazowo
+        </label>
+        <label class="radio">
+          <input type="radio" name="recurrence" [(ngModel)]="recurrence" value="interval" />
+          Co
+          <input type="number" min="1" max="30" [(ngModel)]="intervalDays" [disabled]="recurrence !== 'interval'" />
+          dni
+        </label>
+      </fieldset>
+
+      @if (recurrence === 'interval') {
+        <p class="hint">
+          Kolejne jazdy w tym samym slocie godzinowym pojawią się automatycznie.
+          Anulowanie jednego terminu znów otworzy ten slot.
+        </p>
+      }
+
+      @if (formError) {
+        <p class="banner error">{{ formError }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="text" (click)="closePanels()">Anuluj</button>
+        <button type="button" class="button" [disabled]="saving || !children.length || !horses.length" (click)="saveBooking()">
+          {{ saving ? 'Zapisywanie…' : 'Zapisz jazdę' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (detailSlot?.booking) {
+  <div class="overlay" (click)="closePanels()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <p class="eyebrow">Szczegóły jazdy</p>
+      <h2>{{ personName(detailSlot!.booking!.child) }}</h2>
+      <p class="muted">{{ formatDateTime(detailSlot!.start) }}</p>
+      <dl class="meta">
+        <div>
+          <dt>Koń</dt>
+          <dd>{{ detailSlot!.booking!.horse.name }}</dd>
+        </div>
+        <div>
+          <dt>Stawka</dt>
+          <dd>{{ detailSlot!.booking!.child.hourlyRate }} zł/h</dd>
+        </div>
+        <div>
+          <dt>Termin</dt>
+          <dd>{{ recurrenceLabel(detailSlot!) }}</dd>
+        </div>
+      </dl>
+      @if (detailSlot!.booking!.outsideChildPreference) {
+        <p class="hint">Ta godzina wypada poza preferowanymi godzinami dziecka.</p>
+      }
+      @if (formError) {
+        <p class="banner error">{{ formError }}</p>
+      }
+      <div class="actions stack">
+        <button type="button" class="button danger" [disabled]="saving" (click)="cancelOccurrence()">
+          Anuluj tę jazdę
+        </button>
+        @if (detailSlot!.booking!.recurring) {
+          <button type="button" class="ghost" [disabled]="saving" (click)="cancelSeries()">
+            Anuluj całą serię od tego terminu
+          </button>
+        }
+        <button type="button" class="text" (click)="closePanels()">Zamknij</button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,81 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Zespół</p>
+      <h1>Instruktorzy</h1>
+    </div>
+    <button type="button" class="button" (click)="startCreate()">Dodaj instruktora</button>
+  </header>
+
+  @if (error && !open) {
+    <p class="banner error">{{ error }}</p>
+  }
+
+  <div class="cards">
+    @for (instructor of instructors; track instructor._id) {
+      <article class="card">
+        <div>
+          <h2>{{ personName(instructor) }}</h2>
+          <p class="muted">{{ hoursSummary(instructor) }}</p>
+        </div>
+        <div class="actions">
+          <button type="button" class="text" (click)="startEdit(instructor)">Edytuj</button>
+          <button type="button" class="text danger" (click)="remove(instructor)">Usuń</button>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted">Nie ma jeszcze instruktorów.</p>
+    }
+  </div>
+</section>
+
+@if (open) {
+  <div class="overlay" (click)="close()">
+    <div class="dialog wide" (click)="$event.stopPropagation()">
+      <p class="eyebrow">{{ editingId ? 'Edycja' : 'Nowy instruktor' }}</p>
+      <h2>{{ editingId ? 'Zmień dane' : 'Dodaj instruktora' }}</h2>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Imię</span>
+          <input [(ngModel)]="firstName" />
+        </label>
+        <label class="field">
+          <span>Nazwisko</span>
+          <input [(ngModel)]="lastName" />
+        </label>
+      </div>
+
+      <h3 class="subhead">Preferowane godziny jazd</h3>
+      <div class="hours-editor">
+        @for (day of weekdays; track day.key) {
+          <div class="hours-row">
+            <strong>{{ day.label }}</strong>
+            <div class="ranges">
+              @for (range of preferredHours[day.key]; track $index) {
+                <div class="range">
+                  <input type="time" [(ngModel)]="range.from" />
+                  <span>—</span>
+                  <input type="time" [(ngModel)]="range.to" />
+                  <button type="button" class="icon" (click)="removeRange(day.key, $index)">×</button>
+                </div>
+              }
+              <button type="button" class="text" (click)="addRange(day.key)">+ dodaj zakres</button>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (error) {
+        <p class="banner error">{{ error }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="text" (click)="close()">Anuluj</button>
+        <button type="button" class="button" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Zapisywanie…' : 'Zapisz' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

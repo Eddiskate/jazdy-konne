@@ -1,0 +1,20 @@
+<div class="app-shell">
+  <aside class="sidebar">
+    <a routerLink="/" class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <span>
+        <strong>Jazdy Konne</strong>
+        <small>planer stajni</small>
+      </span>
+    </a>
+    <nav>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Kalendarz</a>
+      <a routerLink="/instruktorzy" routerLinkActive="active">Instruktorzy</a>
+      <a routerLink="/dzieci" routerLinkActive="active">Dzieci</a>
+      <a routerLink="/konie" routerLinkActive="active">Konie</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

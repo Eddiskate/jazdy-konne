@@ -1,0 +1,79 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Podopieczni</p>
+      <h1>Dzieci</h1>
+    </div>
+    <button type="button" class="button" (click)="startCreate()">Dodaj dziecko</button>
+  </header>
+
+  @if (error && !open) {
+    <p class="banner error">{{ error }}</p>
+  }
+
+  <div class="cards">
+    @for (child of children; track child._id) {
+      <article class="card">
+        <div>
+          <h2>{{ personName(child) }}</h2>
+          <p class="muted">
+            {{ child.hourlyRate }} zł/h · preferowane godziny {{ child.preferredHours.from }}–{{ child.preferredHours.to }}
+          </p>
+        </div>
+        <div class="actions">
+          <button type="button" class="text" (click)="startEdit(child)">Edytuj</button>
+          <button type="button" class="text danger" (click)="remove(child)">Usuń</button>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted">Nie ma jeszcze dzieci.</p>
+    }
+  </div>
+</section>
+
+@if (open) {
+  <div class="overlay" (click)="close()">
+    <div class="dialog" (click)="$event.stopPropagation()">
+      <p class="eyebrow">{{ editingId ? 'Edycja' : 'Nowe dziecko' }}</p>
+      <h2>{{ editingId ? 'Zmień dane' : 'Dodaj dziecko' }}</h2>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Imię</span>
+          <input [(ngModel)]="firstName" />
+        </label>
+        <label class="field">
+          <span>Nazwisko</span>
+          <input [(ngModel)]="lastName" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Stawka godzinowa (zł)</span>
+        <input type="number" min="0" step="5" [(ngModel)]="hourlyRate" />
+      </label>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Preferowane godziny od</span>
+          <input type="time" [(ngModel)]="from" />
+        </label>
+        <label class="field">
+          <span>do</span>
+          <input type="time" [(ngModel)]="to" />
+        </label>
+      </div>
+
+      @if (error) {
+        <p class="banner error">{{ error }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" class="text" (click)="close()">Anuluj</button>
+        <button type="button" class="button" [disabled]="saving" (click)="save()">
+          {{ saving ? 'Zapisywanie…' : 'Zapisz' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
