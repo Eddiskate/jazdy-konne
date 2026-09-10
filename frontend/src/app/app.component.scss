@@ -35,12 +35,10 @@
 }
 
 .mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 30% 30%, #f0d9a6, transparent 40%),
-    linear-gradient(135deg, #c45c26, #2d5a3d);
+  width: auto;
+  height: 52px;
+  display: block;
+  flex-shrink: 0;
 }
 
 nav {
