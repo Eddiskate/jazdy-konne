@@ -4,8 +4,8 @@ declare const window: {
 };
 
 function getEnvValue(key: 'apiUrl', defaultValue: string): string {
-  if (typeof window !== 'undefined' && window.env?.[key]) {
-    return window.env[key] as string;
+  if (typeof window !== 'undefined' && window.env && key in window.env) {
+    return String(window.env[key] ?? '');
   }
   return defaultValue;
 }

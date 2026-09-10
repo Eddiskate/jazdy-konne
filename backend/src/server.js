@@ -1,5 +1,8 @@
 import cors from 'cors';
 import express from 'express';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { connectDb, pingDb } from './db.js';
 import { Child } from './models/Child.js';
 import { Horse } from './models/Horse.js';
@@ -37,6 +40,10 @@ app.use(
 app.use(express.json());
 
 // Zawsze HTTP 200 — Easypanel nie oznacza apki jako unreachable przy problemie z bazą
+app.get('/health', (_req, res) => {
+  res.type('text').send('healthy\n');
+});
+
 app.get('/api/health', async (_req, res) => {
   let mongo = false;
   try {
@@ -61,9 +68,18 @@ app.use((err, _req, res, _next) => {
   res.status(400).json({ error: err.message || 'Nie udało się zapisać.' });
 });
 
+const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../public');
+if (existsSync(publicDir)) {
+  app.use(express.static(publicDir));
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(publicDir, 'index.html'));
+  });
+}
+
 await connectDb();
 await seedIfEmpty();
 
 app.listen(port, () => {
-  console.log(`API listening on port ${port}`);
+  console.log(`App listening on port ${port}`);
 });
