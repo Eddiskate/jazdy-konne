@@ -53,9 +53,10 @@
                     {{ recurrenceLabel(slot) }}
                   </span>
                 </div>
-                <strong>{{ personName(slot.booking.child) }}</strong>
-                <span>{{ slot.booking.horse.name }}</span>
-                <em>{{ slot.booking.child.hourlyRate }} zł/h</em>
+                @for (rider of ridersOf(slot.booking); track rider.child.id) {
+                  <strong>{{ personName(rider.child) }}</strong>
+                  <span>{{ rider.horse.name }} · {{ rider.child.hourlyRate }} zł/h</span>
+                }
               </button>
             } @else {
               <button type="button" class="slot empty" (click)="openBooking(slot)">
@@ -77,25 +78,34 @@
       <h2>Obsadź slot</h2>
       <p class="muted">{{ formatDateTime(bookingSlot.start) }}</p>
 
-      <label class="field">
-        <span>Dziecko</span>
-        <select [(ngModel)]="childId">
-          @for (child of children; track child._id) {
-            <option [value]="child._id">
-              {{ personName(child) }} · {{ child.hourlyRate }} zł/h · {{ child.preferredHours.from }}–{{ child.preferredHours.to }}
-            </option>
+      @for (pair of pairs; track pair.key; let i = $index) {
+        <fieldset class="pair">
+          <legend>Zestaw {{ i + 1 }}</legend>
+          @if (pairs.length > 1) {
+            <button type="button" class="text danger pair-remove" (click)="removePair(pair.key)">Usuń</button>
           }
-        </select>
-      </label>
+          <label class="field">
+            <span>Dziecko</span>
+            <select [(ngModel)]="pair.childId" [name]="'child-' + pair.key">
+              @for (child of children; track child._id) {
+                <option [value]="child._id">
+                  {{ personName(child) }} · {{ child.hourlyRate }} zł/h · {{ child.preferredHours.from }}–{{ child.preferredHours.to }}
+                </option>
+              }
+            </select>
+          </label>
+          <label class="field">
+            <span>Koń</span>
+            <select [(ngModel)]="pair.horseId" [name]="'horse-' + pair.key">
+              @for (horse of horses; track horse._id) {
+                <option [value]="horse._id">{{ horse.name }}</option>
+              }
+            </select>
+          </label>
+        </fieldset>
+      }
 
-      <label class="field">
-        <span>Koń</span>
-        <select [(ngModel)]="horseId">
-          @for (horse of horses; track horse._id) {
-            <option [value]="horse._id">{{ horse.name }}</option>
-          }
-        </select>
-      </label>
+      <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
 
       <fieldset class="field">
         <legend>Powtarzalność</legend>
@@ -136,25 +146,19 @@
   <div class="overlay" (click)="closePanels()">
     <div class="dialog" (click)="$event.stopPropagation()">
       <p class="eyebrow">Szczegóły jazdy</p>
-      <h2>{{ personName(detailSlot!.booking!.child) }}</h2>
-      <p class="muted">{{ formatDateTime(detailSlot!.start) }}</p>
-      <dl class="meta">
-        <div>
-          <dt>Koń</dt>
-          <dd>{{ detailSlot!.booking!.horse.name }}</dd>
-        </div>
-        <div>
-          <dt>Stawka</dt>
-          <dd>{{ detailSlot!.booking!.child.hourlyRate }} zł/h</dd>
-        </div>
-        <div>
-          <dt>Termin</dt>
-          <dd>{{ recurrenceLabel(detailSlot!) }}</dd>
-        </div>
-      </dl>
-      @if (detailSlot!.booking!.outsideChildPreference) {
-        <p class="hint">Ta godzina wypada poza preferowanymi godzinami dziecka.</p>
-      }
+      <h2>{{ slotTitle(detailSlot!) }}</h2>
+      <p class="muted">{{ formatDateTime(detailSlot!.start) }} · {{ recurrenceLabel(detailSlot!) }}</p>
+      <ul class="rider-list">
+        @for (rider of ridersOf(detailSlot!.booking); track rider.child.id) {
+          <li>
+            <strong>{{ personName(rider.child) }}</strong>
+            <span>{{ rider.horse.name }} · {{ rider.child.hourlyRate }} zł/h</span>
+            @if (rider.outsideChildPreference) {
+              <em>poza preferowanymi godzinami</em>
+            }
+          </li>
+        }
+      </ul>
       @if (formError) {
         <p class="banner error">{{ formError }}</p>
       }

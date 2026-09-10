@@ -69,8 +69,7 @@ export class ApiService {
 
   createBooking(payload: {
     instructorId: string;
-    childId: string;
-    horseId: string;
+    riders: { childId: string; horseId: string }[];
     start: string;
     recurrence: { type: 'none' } | { type: 'interval'; intervalDays: number };
   }) {

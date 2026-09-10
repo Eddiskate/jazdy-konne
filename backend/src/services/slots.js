@@ -131,12 +131,33 @@ function sameInstant(a, b) {
   return a.hasSame(b, 'minute');
 }
 
+export function bookingRiders(booking) {
+  if (Array.isArray(booking?.riders) && booking.riders.length) {
+    return booking.riders;
+  }
+  if (booking?.childId && booking?.horseId) {
+    return [{ childId: booking.childId, horseId: booking.horseId }];
+  }
+  return [];
+}
+
 export function findConflicts(newBooking, existingBookings, untilIso) {
   const newOccurrences = expandOccurrences(newBooking, untilIso);
+  const newRiders = bookingRiders(newBooking);
   const conflicts = [];
+
+  const childIds = newRiders.map((rider) => String(rider.childId));
+  const horseIds = newRiders.map((rider) => String(rider.horseId));
+  if (new Set(childIds).size !== childIds.length) {
+    conflicts.push({ type: 'child', message: 'To samo dziecko nie może być dwa razy w jednym slocie.' });
+  }
+  if (new Set(horseIds).size !== horseIds.length) {
+    conflicts.push({ type: 'horse', message: 'Ten sam koń nie może być dwa razy w jednym slocie.' });
+  }
 
   for (const existing of existingBookings) {
     const existingOccurrences = expandOccurrences(existing, untilIso);
+    const existingRiders = bookingRiders(existing);
     for (const next of newOccurrences) {
       for (const taken of existingOccurrences) {
         if (!sameInstant(next, taken)) continue;
@@ -148,19 +169,21 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
             message: 'Instruktor ma już jazdę w tym slocie.',
           });
         }
-        if (String(existing.childId) === String(newBooking.childId)) {
-          conflicts.push({
-            type: 'child',
-            at: next.toISO(),
-            message: 'Dziecko ma już jazdę o tej godzinie.',
-          });
-        }
-        if (String(existing.horseId) === String(newBooking.horseId)) {
-          conflicts.push({
-            type: 'horse',
-            at: next.toISO(),
-            message: 'Koń jest już zajęty o tej godzinie.',
-          });
+        for (const rider of newRiders) {
+          if (existingRiders.some((takenRider) => String(takenRider.childId) === String(rider.childId))) {
+            conflicts.push({
+              type: 'child',
+              at: next.toISO(),
+              message: 'Dziecko ma już jazdę o tej godzinie.',
+            });
+          }
+          if (existingRiders.some((takenRider) => String(takenRider.horseId) === String(rider.horseId))) {
+            conflicts.push({
+              type: 'horse',
+              at: next.toISO(),
+              message: 'Koń jest już zajęty o tej godzinie.',
+            });
+          }
         }
       }
     }

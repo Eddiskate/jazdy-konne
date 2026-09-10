@@ -99,6 +99,47 @@
   gap: 6px;
 }
 
+.pair {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px 12px 4px;
+  margin: 12px 0 0;
+}
+
+.pair-remove {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+}
+
+.add-pair {
+  margin: 10px 0 4px;
+}
+
+.rider-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: grid;
+  gap: 10px;
+
+  li {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 12px;
+    background: #f6f1e6;
+    border-radius: 10px;
+  }
+
+  em {
+    font-style: normal;
+    color: var(--accent-2);
+    font-size: 0.78rem;
+  }
+}
+
 .badge {
   font-size: 0.68rem;
   padding: 2px 6px;

@@ -6,12 +6,24 @@ import { Instructor } from '../models/Instructor.js';
 import {
   SLOT_MINUTES,
   bookingOccursAt,
+  bookingRiders,
   generateSlotsForInstructor,
   isOutsideChildPreference,
   parseWarsaw,
 } from '../services/slots.js';
 
 export const calendarRouter = Router();
+
+function mapChild(child) {
+  if (!child) return null;
+  return {
+    id: child._id,
+    firstName: child.firstName,
+    lastName: child.lastName,
+    hourlyRate: child.hourlyRate,
+    preferredHours: child.preferredHours,
+  };
+}
 
 calendarRouter.get('/', async (req, res, next) => {
   try {
@@ -40,28 +52,32 @@ calendarRouter.get('/', async (req, res, next) => {
         return { ...slot, booking: null };
       }
 
-      const child = childMap[String(match.childId)];
-      const horse = horseMap[String(match.horseId)];
+      const riders = bookingRiders(match)
+        .map((rider) => {
+          const child = childMap[String(rider.childId)];
+          const horse = horseMap[String(rider.horseId)];
+          return {
+            child: mapChild(child),
+            horse: horse ? { id: horse._id, name: horse.name } : null,
+            outsideChildPreference: child
+              ? isOutsideChildPreference(child, slot.start, match.durationMinutes || SLOT_MINUTES)
+              : false,
+          };
+        })
+        .filter((rider) => rider.child && rider.horse);
+
+      const first = riders[0];
       return {
         ...slot,
         booking: {
           id: match._id,
-          child: child
-            ? {
-                id: child._id,
-                firstName: child.firstName,
-                lastName: child.lastName,
-                hourlyRate: child.hourlyRate,
-                preferredHours: child.preferredHours,
-              }
-            : null,
-          horse: horse ? { id: horse._id, name: horse.name } : null,
+          riders,
+          child: first?.child || null,
+          horse: first?.horse || null,
           recurring: match.recurrence?.type === 'interval',
           intervalDays: match.recurrence?.intervalDays || null,
           seriesStart: match.start,
-          outsideChildPreference: child
-            ? isOutsideChildPreference(child, slot.start, match.durationMinutes || SLOT_MINUTES)
-            : false,
+          outsideChildPreference: riders.some((rider) => rider.outsideChildPreference),
         },
       };
     });

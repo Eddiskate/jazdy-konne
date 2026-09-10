@@ -13,7 +13,13 @@ import {
   startOfWeek,
   toIsoDate,
 } from '../date.util';
-import { CalendarSlot, Child, Horse, Instructor, personName } from '../models';
+import { CalendarSlot, Child, Horse, Instructor, bookingRiders, personName } from '../models';
+
+interface RiderDraft {
+  key: number;
+  childId: string;
+  horseId: string;
+}
 
 interface DayColumn {
   date: Date;
@@ -43,19 +49,15 @@ export class CalendarPage implements OnInit {
 
   bookingSlot: CalendarSlot | null = null;
   detailSlot: CalendarSlot | null = null;
-  childId = '';
-  horseId = '';
+  pairs: RiderDraft[] = [];
   recurrence: 'none' | 'interval' = 'none';
   intervalDays = 7;
   saving = false;
   formError = '';
+  private pairKey = 1;
 
   get weekLabel(): string {
     return formatWeekRange(this.weekStart, addDays(this.weekStart, 6));
-  }
-
-  get selectedChild(): Child | undefined {
-    return this.children.find((child) => child._id === this.childId);
   }
 
   ngOnInit(): void {
@@ -117,11 +119,19 @@ export class CalendarPage implements OnInit {
   openBooking(slot: CalendarSlot): void {
     this.bookingSlot = slot;
     this.detailSlot = null;
-    this.childId = this.children[0]?._id || '';
-    this.horseId = this.horses[0]?._id || '';
+    this.pairs = [this.newPair()];
     this.recurrence = 'none';
     this.intervalDays = 7;
     this.formError = '';
+  }
+
+  addPair(): void {
+    this.pairs = [...this.pairs, this.newPair()];
+  }
+
+  removePair(key: number): void {
+    if (this.pairs.length <= 1) return;
+    this.pairs = this.pairs.filter((pair) => pair.key !== key);
   }
 
   openDetail(slot: CalendarSlot): void {
@@ -138,8 +148,21 @@ export class CalendarPage implements OnInit {
   }
 
   saveBooking(): void {
-    if (!this.bookingSlot || !this.instructorId || !this.childId || !this.horseId) {
+    const riders = this.pairs
+      .map((pair) => ({ childId: pair.childId, horseId: pair.horseId }))
+      .filter((pair) => pair.childId && pair.horseId);
+    if (!this.bookingSlot || !this.instructorId || !riders.length) {
       this.formError = 'Wybierz dziecko i konia.';
+      return;
+    }
+    const childIds = riders.map((rider) => rider.childId);
+    const horseIds = riders.map((rider) => rider.horseId);
+    if (new Set(childIds).size !== childIds.length) {
+      this.formError = 'To samo dziecko nie może być dwa razy w jednym slocie.';
+      return;
+    }
+    if (new Set(horseIds).size !== horseIds.length) {
+      this.formError = 'Ten sam koń nie może być dwa razy w jednym slocie.';
       return;
     }
     this.saving = true;
@@ -147,8 +170,7 @@ export class CalendarPage implements OnInit {
     this.api
       .createBooking({
         instructorId: this.instructorId,
-        childId: this.childId,
-        horseId: this.horseId,
+        riders,
         start: this.bookingSlot.start,
         recurrence:
           this.recurrence === 'interval'
@@ -202,11 +224,31 @@ export class CalendarPage implements OnInit {
   personName = personName;
   formatTime = formatTime;
   formatDateTime = formatDateTime;
+  ridersOf = bookingRiders;
+
+  slotTitle(slot: CalendarSlot): string {
+    const riders = bookingRiders(slot.booking);
+    if (!riders.length) return 'Jazda';
+    if (riders.length === 1) return personName(riders[0].child);
+    return `${riders.length} × dziecko + koń`;
+  }
 
   recurrenceLabel(slot: CalendarSlot): string {
     if (!slot.booking?.recurring) return 'Jednorazowo';
     const days = slot.booking.intervalDays || 1;
     return days === 1 ? 'Co dzień' : `Co ${days} dni`;
+  }
+
+  private newPair(): RiderDraft {
+    const usedChildren = new Set(this.pairs.map((pair) => pair.childId));
+    const usedHorses = new Set(this.pairs.map((pair) => pair.horseId));
+    const child = this.children.find((item) => !usedChildren.has(item._id)) || this.children[0];
+    const horse = this.horses.find((item) => !usedHorses.has(item._id)) || this.horses[0];
+    return {
+      key: this.pairKey++,
+      childId: child?._id || '',
+      horseId: horse?._id || '',
+    };
   }
 
   private buildEmptyDays(): DayColumn[] {

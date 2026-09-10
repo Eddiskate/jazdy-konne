@@ -13,22 +13,44 @@ import {
 
 export const bookingsRouter = Router();
 
+function normalizeRiders(body) {
+  if (Array.isArray(body.riders) && body.riders.length) {
+    return body.riders
+      .map((rider) => ({
+        childId: rider.childId,
+        horseId: rider.horseId,
+      }))
+      .filter((rider) => rider.childId && rider.horseId);
+  }
+  if (body.childId && body.horseId) {
+    return [{ childId: body.childId, horseId: body.horseId }];
+  }
+  return [];
+}
+
 bookingsRouter.post('/', async (req, res, next) => {
   try {
-    const { instructorId, childId, horseId, start, recurrence } = req.body;
-    if (!instructorId || !childId || !horseId || !start) {
-      return res.status(400).json({ error: 'Wymagane: instruktor, dziecko, koń i termin.' });
+    const { instructorId, start, recurrence } = req.body;
+    const riders = normalizeRiders(req.body);
+    if (!instructorId || !start || !riders.length) {
+      return res.status(400).json({ error: 'Wymagane: instruktor, termin oraz przynajmniej jeden zestaw dziecko + koń.' });
     }
 
-    const [instructor, child, horse] = await Promise.all([
-      Instructor.findById(instructorId),
-      Child.findById(childId),
-      Horse.findById(horseId),
-    ]);
-
+    const instructor = await Instructor.findById(instructorId);
     if (!instructor) return res.status(404).json({ error: 'Nie znaleziono instruktora.' });
-    if (!child) return res.status(404).json({ error: 'Nie znaleziono dziecka.' });
-    if (!horse) return res.status(404).json({ error: 'Nie znaleziono konia.' });
+
+    const [children, horses] = await Promise.all([
+      Child.find({ _id: { $in: riders.map((rider) => rider.childId) } }),
+      Horse.find({ _id: { $in: riders.map((rider) => rider.horseId) } }),
+    ]);
+    const childIds = new Set(children.map((child) => String(child._id)));
+    const horseIds = new Set(horses.map((horse) => String(horse._id)));
+    if (riders.some((rider) => !childIds.has(String(rider.childId)))) {
+      return res.status(404).json({ error: 'Nie znaleziono dziecka.' });
+    }
+    if (riders.some((rider) => !horseIds.has(String(rider.horseId)))) {
+      return res.status(404).json({ error: 'Nie znaleziono konia.' });
+    }
 
     const startDt = parseWarsaw(start);
     if (!startDt.isValid) {
@@ -47,8 +69,9 @@ bookingsRouter.post('/', async (req, res, next) => {
 
     const draft = {
       instructorId,
-      childId,
-      horseId,
+      riders,
+      childId: riders[0].childId,
+      horseId: riders[0].horseId,
       start: startDt.toJSDate(),
       durationMinutes: SLOT_MINUTES,
       recurrence: { type: recurrenceType, intervalDays },

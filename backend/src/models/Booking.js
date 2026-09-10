@@ -1,10 +1,19 @@
 import mongoose from 'mongoose';
 
+const riderSchema = new mongoose.Schema(
+  {
+    childId: { type: mongoose.Schema.Types.ObjectId, ref: 'Child', required: true },
+    horseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Horse', required: true },
+  },
+  { _id: false },
+);
+
 const bookingSchema = new mongoose.Schema(
   {
     instructorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Instructor', required: true },
-    childId: { type: mongoose.Schema.Types.ObjectId, ref: 'Child', required: true },
-    horseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Horse', required: true },
+    riders: { type: [riderSchema], default: [] },
+    childId: { type: mongoose.Schema.Types.ObjectId, ref: 'Child' },
+    horseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Horse' },
     start: { type: Date, required: true },
     durationMinutes: { type: Number, default: 60 },
     recurrence: {
