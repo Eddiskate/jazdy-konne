@@ -9,6 +9,7 @@ import { Horse } from './models/Horse.js';
 import { Instructor } from './models/Instructor.js';
 import { bookingsRouter } from './routes/bookings.js';
 import { calendarRouter } from './routes/calendar.js';
+import { financeRouter } from './routes/finance.js';
 import { createCrudRouter } from './routes/crud.js';
 import { seedIfEmpty } from './seed.js';
 
@@ -59,6 +60,7 @@ app.use('/api/children', createCrudRouter(Child, { searchFields: ['firstName', '
 app.use('/api/horses', createCrudRouter(Horse, { searchFields: ['name'] }));
 app.use('/api/calendar', calendarRouter);
 app.use('/api/bookings', bookingsRouter);
+app.use('/api/finance', financeRouter);
 
 app.use((err, _req, res, _next) => {
   console.error(err);

@@ -104,6 +104,23 @@ export function emptyWeekHours(): WeekHours {
   };
 }
 
+export interface FinanceChildRow {
+  childId: string;
+  firstName: string;
+  lastName: string;
+  hourlyRate: number;
+  rides: number;
+  amount: number;
+}
+
+export interface FinanceSummary {
+  month: string;
+  label: string;
+  rideCount: number;
+  total: number;
+  children: FinanceChildRow[];
+}
+
 export function personName(person: { firstName: string; lastName: string }): string {
   return `${person.firstName} ${person.lastName}`;
 }

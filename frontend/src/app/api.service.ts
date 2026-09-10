@@ -2,7 +2,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
-import { CalendarResponse, Child, Horse, Instructor } from './models';
+import { CalendarResponse, Child, FinanceSummary, Horse, Instructor } from './models';
 
 export function apiErrorMessage(error: unknown, fallback = 'Coś poszło nie tak.'): string {
   if (error instanceof HttpErrorResponse) {
@@ -59,6 +59,10 @@ export class ApiService {
 
   deleteHorse(id: string): Observable<{ ok: boolean }> {
     return this.http.delete<{ ok: boolean }>(this.url(`/api/horses/${id}`));
+  }
+
+  finance(month: string): Observable<FinanceSummary> {
+    return this.http.get<FinanceSummary>(this.url('/api/finance'), { params: { month } });
   }
 
   calendar(instructorId: string, from: string, to: string): Observable<CalendarResponse> {

@@ -102,6 +102,11 @@ export function expandOccurrences(booking, untilIso, horizonWeeks = 16) {
   return dates;
 }
 
+export function expandOccurrencesInRange(booking, fromIso, toIso) {
+  const from = parseWarsaw(fromIso).startOf('day');
+  return expandOccurrences(booking, toIso).filter((occurrence) => occurrence >= from);
+}
+
 export function instructorHasSlot(instructor, startIso, slotMinutes = SLOT_MINUTES) {
   const start = parseWarsaw(startIso);
   const ranges = instructor.preferredHours?.[weekdayKey(start)] || [];

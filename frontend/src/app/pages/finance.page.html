@@ -1,0 +1,39 @@
+<section class="page">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">Rozliczenia</p>
+      <h1>Finanse</h1>
+    </div>
+    <div class="week-nav">
+      <button type="button" class="ghost" (click)="prevMonth()" aria-label="Poprzedni miesiąc">‹</button>
+      <strong>{{ summary?.label || month }}</strong>
+      <button type="button" class="ghost" (click)="nextMonth()" aria-label="Następny miesiąc">›</button>
+    </div>
+  </header>
+
+  @if (error) {
+    <p class="banner error">{{ error }}</p>
+  }
+
+  @if (summary) {
+    <article class="total-card" [class.loading]="loading">
+      <p class="muted">Kwota za jazdy</p>
+      <p class="total">{{ money(summary.total) }}</p>
+      <p class="muted">{{ summary.rideCount }} {{ summary.rideCount === 1 ? 'jazda' : summary.rideCount < 5 && summary.rideCount > 0 ? 'jazdy' : 'jazd' }} w miesiącu</p>
+    </article>
+
+    <div class="cards">
+      @for (row of summary.children; track row.childId) {
+        <article class="card">
+          <div>
+            <h2>{{ personName(row) }}</h2>
+            <p class="muted">{{ row.rides }} × {{ row.hourlyRate }} zł/h</p>
+          </div>
+          <strong class="row-amount">{{ money(row.amount) }}</strong>
+        </article>
+      } @empty {
+        <p class="muted">Brak jazd w tym miesiącu.</p>
+      }
+    </div>
+  }
+</section>
