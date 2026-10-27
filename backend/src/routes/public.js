@@ -122,7 +122,7 @@ function pickInstructor(instructors, bookings, startIso) {
 async function loadBoard(from, to) {
   const [instructors, horses, bookings] = await Promise.all([
     Instructor.find().sort({ lastName: 1, firstName: 1 }),
-    Horse.find().sort({ name: 1 }),
+    Horse.find({ available: { $ne: false } }).sort({ name: 1 }),
     Booking.find({
       $or: [{ seriesEndedAt: null }, { seriesEndedAt: { $gt: from.toJSDate() } }],
     }),

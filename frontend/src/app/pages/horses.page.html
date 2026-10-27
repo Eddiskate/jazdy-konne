@@ -16,6 +16,9 @@
       <article class="card">
         <div>
           <h2>{{ horse.name }}</h2>
+          @if (!isAvailable(horse)) {
+            <p class="muted">Ukryty w kalendarzu jazd</p>
+          }
         </div>
         <div class="actions">
           <button type="button" class="text" (click)="startEdit(horse)">Edytuj</button>
@@ -32,11 +35,16 @@
   <div class="overlay" (click)="close()">
     <div class="dialog" (click)="$event.stopPropagation()">
       <p class="eyebrow">{{ editingId ? 'Edycja' : 'Nowy koń' }}</p>
-      <h2>{{ editingId ? 'Zmień imię' : 'Dodaj konia' }}</h2>
+      <h2>{{ editingId ? 'Zmień konia' : 'Dodaj konia' }}</h2>
 
       <label class="field">
         <span>Imię</span>
         <input [(ngModel)]="name" />
+      </label>
+
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="available" />
+        <span>Dostępny w kalendarzu jazd (strona i planer)</span>
       </label>
 
       @if (error) {

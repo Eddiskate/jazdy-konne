@@ -16,12 +16,17 @@ export class HorsesPage implements OnInit {
   horses: Horse[] = [];
   editingId: string | null = null;
   name = '';
+  available = true;
   error = '';
   saving = false;
   open = false;
 
   ngOnInit(): void {
     this.reload();
+  }
+
+  isAvailable(horse: Horse): boolean {
+    return horse.available !== false;
   }
 
   reload(): void {
@@ -34,6 +39,7 @@ export class HorsesPage implements OnInit {
   startCreate(): void {
     this.editingId = null;
     this.name = '';
+    this.available = true;
     this.error = '';
     this.open = true;
   }
@@ -41,6 +47,7 @@ export class HorsesPage implements OnInit {
   startEdit(horse: Horse): void {
     this.editingId = horse._id;
     this.name = horse.name;
+    this.available = this.isAvailable(horse);
     this.error = '';
     this.open = true;
   }
@@ -56,17 +63,22 @@ export class HorsesPage implements OnInit {
     }
     this.saving = true;
     this.error = '';
-    this.api.saveHorse({ name: this.name.trim() }, this.editingId || undefined).subscribe({
-      next: () => {
-        this.saving = false;
-        this.open = false;
-        this.reload();
-      },
-      error: (error) => {
-        this.saving = false;
-        this.error = apiErrorMessage(error);
-      },
-    });
+    this.api
+      .saveHorse(
+        { name: this.name.trim(), available: this.available },
+        this.editingId || undefined,
+      )
+      .subscribe({
+        next: () => {
+          this.saving = false;
+          this.open = false;
+          this.reload();
+        },
+        error: (error) => {
+          this.saving = false;
+          this.error = apiErrorMessage(error);
+        },
+      });
   }
 
   remove(horse: Horse): void {

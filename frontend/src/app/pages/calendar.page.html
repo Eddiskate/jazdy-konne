@@ -98,8 +98,8 @@
           <label class="field">
             <span>Koń</span>
             <select [(ngModel)]="pair.horseId" [name]="'horse-' + pair.key">
-              @for (horse of horses; track horse._id) {
-                <option [value]="horse._id">{{ horse.name }}</option>
+              @for (horse of horsesForSelect(pair.horseId); track horse._id) {
+                <option [value]="horse._id">{{ horse.name }}{{ horse.available === false ? ' (ukryty)' : '' }}</option>
               }
             </select>
           </label>
@@ -190,8 +190,8 @@
           <label class="field">
             <span>Koń</span>
             <select [(ngModel)]="pair.horseId" [name]="'edit-horse-' + pair.key">
-              @for (horse of horses; track horse._id) {
-                <option [value]="horse._id">{{ horse.name }}</option>
+              @for (horse of horsesForSelect(pair.horseId); track horse._id) {
+                <option [value]="horse._id">{{ horse.name }}{{ horse.available === false ? ' (ukryty)' : '' }}</option>
               }
             </select>
           </label>

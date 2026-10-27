@@ -164,6 +164,18 @@ select {
   }
 }
 
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0;
+  font-size: 0.95rem;
+
+  input {
+    margin-top: 3px;
+  }
+}
+
 fieldset.field {
   border: 1px solid var(--line);
   border-radius: 12px;

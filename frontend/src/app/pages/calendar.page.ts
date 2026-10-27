@@ -320,10 +320,15 @@ export class CalendarPage implements OnInit {
     return null;
   }
 
+  horsesForSelect(selectedId = ''): Horse[] {
+    return this.horses.filter((horse) => horse.available !== false || horse._id === selectedId);
+  }
+
   private newPair(): RiderDraft {
     const used = this.usedRiderIds();
     const child = this.children.find((item) => !used.children.has(item._id)) || this.children[0];
-    const horse = this.horses.find((item) => !used.horses.has(item._id)) || this.horses[0];
+    const pool = this.horsesForSelect();
+    const horse = pool.find((item) => !used.horses.has(item._id)) || pool[0];
     return {
       key: this.pairKey++,
       childId: child?._id || '',

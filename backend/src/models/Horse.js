@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 const horseSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, unique: true },
+    /** false = ukryty w kalendarzu jazd i w publicznym API strony */
+    available: { type: Boolean, default: true },
   },
   { timestamps: true },
 );

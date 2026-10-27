@@ -48,10 +48,10 @@ export async function seedIfEmpty() {
   ]);
 
   await Horse.insertMany([
-    { name: 'Rychu' },
-    { name: 'Ksenia' },
-    { name: 'Fruzia' },
-    { name: 'Drago' },
+    { name: 'Rychu', available: true },
+    { name: 'Ksenia', available: true },
+    { name: 'Fruzia', available: true },
+    { name: 'Drago', available: true },
   ]);
 
   console.log(

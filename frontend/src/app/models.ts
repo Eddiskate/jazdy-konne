@@ -37,6 +37,8 @@ export interface Child {
 export interface Horse {
   _id: string;
   name: string;
+  /** false = ukryty w kalendarzu jazd / API strony; brak pola = dostępny */
+  available?: boolean;
 }
 
 export interface SlotRider {
