@@ -141,6 +141,6 @@ export interface FinanceSummary {
   children: FinanceChildRow[];
 }
 
-export function personName(person: { firstName: string; lastName: string }): string {
-  return `${person.firstName} ${person.lastName}`;
+export function personName(person: { firstName: string; lastName?: string }): string {
+  return [person.firstName, person.lastName].filter((part) => String(part || '').trim()).join(' ');
 }

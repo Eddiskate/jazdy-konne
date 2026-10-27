@@ -62,8 +62,8 @@ export class ChildrenPage implements OnInit {
   }
 
   save(): void {
-    if (!this.firstName.trim() || !this.lastName.trim() || this.hourlyRate == null) {
-      this.error = 'Uzupełnij imię, nazwisko i stawkę.';
+    if (!this.firstName.trim() || this.hourlyRate == null) {
+      this.error = 'Uzupełnij imię i stawkę.';
       return;
     }
     this.saving = true;

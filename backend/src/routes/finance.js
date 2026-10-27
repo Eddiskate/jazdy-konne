@@ -45,7 +45,7 @@ financeRouter.get('/', async (req, res, next) => {
         const current = byChild.get(key) || {
           childId: key,
           firstName: child?.firstName || 'Nieznane',
-          lastName: child?.lastName || 'dziecko',
+          lastName: child?.lastName || '',
           hourlyRate: rate,
           rides: 0,
           amount: 0,

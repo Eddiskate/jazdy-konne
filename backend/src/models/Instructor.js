@@ -24,7 +24,7 @@ const preferredHoursSchema = new mongoose.Schema(
 const instructorSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: true, trim: true },
-    lastName: { type: String, required: true, trim: true },
+    lastName: { type: String, default: '', trim: true },
     preferredHours: { type: preferredHoursSchema, default: () => ({}) },
   },
   { timestamps: true },

@@ -68,8 +68,8 @@ export class InstructorsPage implements OnInit {
   }
 
   save(): void {
-    if (!this.firstName.trim() || !this.lastName.trim()) {
-      this.error = 'Podaj imię i nazwisko.';
+    if (!this.firstName.trim()) {
+      this.error = 'Podaj imię.';
       return;
     }
     this.saving = true;

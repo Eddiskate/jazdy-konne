@@ -189,8 +189,8 @@ publicRouter.post('/reservations', async (req, res, next) => {
     const note = clean(body.note, 500);
     const horseId = clean(body.horseId, 32);
 
-    if (!riderKind || !firstName || !lastName || !phone || !email) {
-      return res.status(400).json({ error: 'Uzupełnij imię, nazwisko, telefon i e-mail.' });
+    if (!riderKind || !firstName || !phone || !email) {
+      return res.status(400).json({ error: 'Uzupełnij imię, telefon i e-mail.' });
     }
     if (riderKind === 'child' && !guardianName) {
       return res.status(400).json({ error: 'Przy dziecku podaj imię i nazwisko opiekuna.' });
@@ -304,7 +304,7 @@ publicRouter.post('/reservations', async (req, res, next) => {
         start: windowSlot.start,
         end: windowSlot.end,
         horse: chosen.name,
-        rider: `${child.firstName} ${child.lastName}`,
+        rider: [child.firstName, child.lastName].filter(Boolean).join(' '),
         kind: riderKind,
       },
     });

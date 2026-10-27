@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const childSchema = new mongoose.Schema(
   {
     firstName: { type: String, required: true, trim: true },
-    lastName: { type: String, required: true, trim: true },
+    lastName: { type: String, default: '', trim: true },
     hourlyRate: { type: Number, required: true, min: 0 },
     preferredHours: {
       from: { type: String, required: true },
