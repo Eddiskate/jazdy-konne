@@ -156,6 +156,11 @@ function sameInstant(a, b) {
   return a.hasSame(b, 'minute');
 }
 
+function formatConflictWhen(dt) {
+  if (!dt?.isValid) return '';
+  return dt.setZone(ZONE).setLocale('pl').toFormat('cccc, d MMMM H:mm');
+}
+
 export function bookingRiders(booking) {
   if (Array.isArray(booking?.riders) && booking.riders.length) {
     return booking.riders;
@@ -206,11 +211,14 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
       for (const taken of existingOccurrences) {
         if (!sameInstant(next, taken)) continue;
 
+        const when = formatConflictWhen(next);
         if (existing.blockExtraHorses) {
           conflicts.push({
             type: 'exclusive',
             at: next.toISO(),
-            message: 'Ten termin jest zablokowany na jednego konia — nie wolno dodać kolejnej jazdy.',
+            message: when
+              ? `Blokada jednego konia (lonża) w terminie ${when} — seria nie może tam wejść.`
+              : 'Ten termin jest zablokowany na jednego konia — nie wolno dodać kolejnej jazdy.',
           });
           continue;
         }
@@ -218,7 +226,9 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
           conflicts.push({
             type: 'exclusive',
             at: next.toISO(),
-            message: 'Nie można zablokować godziny — są już inne jazdy w tym terminie.',
+            message: when
+              ? `Nie można zablokować godziny — ${when} ma już inną jazdę.`
+              : 'Nie można zablokować godziny — są już inne jazdy w tym terminie.',
           });
           continue;
         }
@@ -228,14 +238,18 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
             conflicts.push({
               type: 'child',
               at: next.toISO(),
-              message: 'Dziecko ma już jazdę o tej godzinie.',
+              message: when
+                ? `Dziecko ma już jazdę ${when}.`
+                : 'Dziecko ma już jazdę o tej godzinie.',
             });
           }
           if (existingRiders.some((takenRider) => String(takenRider.horseId) === String(rider.horseId))) {
             conflicts.push({
               type: 'horse',
               at: next.toISO(),
-              message: 'Koń jest już zajęty o tej godzinie.',
+              message: when
+                ? `Koń jest już zajęty ${when}.`
+                : 'Koń jest już zajęty o tej godzinie.',
             });
           }
         }
