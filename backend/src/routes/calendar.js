@@ -22,6 +22,12 @@ function mapChild(child) {
     lastName: child.lastName,
     hourlyRate: child.hourlyRate,
     preferredHours: child.preferredHours,
+    phone: child.phone || '',
+    email: child.email || '',
+    guardianName: child.guardianName || '',
+    note: child.note || '',
+    source: child.source || '',
+    riderKind: child.riderKind || '',
   };
 }
 

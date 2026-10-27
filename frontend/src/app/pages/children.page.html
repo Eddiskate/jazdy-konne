@@ -19,6 +19,16 @@
           <p class="muted">
             {{ child.hourlyRate }} zł/h · preferowane godziny {{ child.preferredHours.from }}–{{ child.preferredHours.to }}
           </p>
+          @if (child.phone || child.email || child.guardianName || child.source === 'website') {
+            <p class="muted">
+              @if (child.riderKind === 'adult') { Dorosły ze strony }
+              @else if (child.source === 'website') { Dziecko ze strony }
+              @if (child.guardianName) { · opiekun {{ child.guardianName }} }
+              @if (child.phone) { · {{ child.phone }} }
+              @if (child.email) { · {{ child.email }} }
+              @if (child.note) { · {{ child.note }} }
+            </p>
+          }
         </div>
         <div class="actions">
           <button type="button" class="text" (click)="startEdit(child)">Edytuj</button>

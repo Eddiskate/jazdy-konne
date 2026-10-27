@@ -8,6 +8,7 @@ import { Child } from './models/Child.js';
 import { Horse } from './models/Horse.js';
 import { Instructor } from './models/Instructor.js';
 import { bookingsRouter } from './routes/bookings.js';
+import { publicRouter } from './routes/public.js';
 import { calendarRouter } from './routes/calendar.js';
 import { financeRouter } from './routes/finance.js';
 import { createCrudRouter } from './routes/crud.js';
@@ -35,7 +36,7 @@ app.use(
       }
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
   }),
 );
 app.use(express.json());
@@ -60,6 +61,7 @@ app.use('/api/children', createCrudRouter(Child, { searchFields: ['firstName', '
 app.use('/api/horses', createCrudRouter(Horse, { searchFields: ['name'] }));
 app.use('/api/calendar', calendarRouter);
 app.use('/api/bookings', bookingsRouter);
+app.use('/api/public', publicRouter);
 app.use('/api/finance', financeRouter);
 
 app.use((err, _req, res, _next) => {

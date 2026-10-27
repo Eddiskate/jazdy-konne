@@ -26,6 +26,12 @@ export interface Child {
   lastName: string;
   hourlyRate: number;
   preferredHours: TimeRange;
+  phone?: string;
+  email?: string;
+  guardianName?: string;
+  note?: string;
+  source?: string;
+  riderKind?: 'child' | 'adult';
 }
 
 export interface Horse {
@@ -35,7 +41,19 @@ export interface Horse {
 
 export interface SlotRider {
   bookingId: string;
-  child: Pick<Child, 'firstName' | 'lastName' | 'hourlyRate' | 'preferredHours'> & { id: string };
+  child: Pick<
+    Child,
+    | 'firstName'
+    | 'lastName'
+    | 'hourlyRate'
+    | 'preferredHours'
+    | 'phone'
+    | 'email'
+    | 'guardianName'
+    | 'note'
+    | 'source'
+    | 'riderKind'
+  > & { id: string };
   horse: { id: string; name: string };
   recurring: boolean;
   intervalDays: number | null;

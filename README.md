@@ -39,3 +39,22 @@ Frontend i API są w jednym kontenerze, pod jednym adresem (`/api` idzie do back
 `CORS_ORIGIN` nie jest potrzebne. Hasło ze znakami specjalnymi (`$`) jest kodowane automatycznie, a `authSource=admin` doklejane samo. Host = nazwa serwisu Mongo (nie `localhost`).
 
 Po deployu: `/api/health` → `{ ok: true, mongo: true }`.
+
+## API strony stajni
+
+Publiczny zapis jazd dla strony Stajni Hrabhill. Klucz zostaje na serwerze strony, przeglądarka go nie widzi.
+
+| Metoda | Ścieżka | Znaczenie |
+|--------|---------|-----------|
+| `GET` | `/api/public/slots?from=YYYY-MM-DD&to=YYYY-MM-DD` | Wolne okna: godzina i konie, bez danych innych jeźdźców |
+| `POST` | `/api/public/reservations` | Zapis dziecka albo dorosłego na jedno wolne okno |
+
+Nagłówek: `X-API-Key: PUBLIC_API_KEY` (minimum 16 znaków). Bez klucza endpoint zwraca 503.
+
+| Zmienna | Domyślnie | Znaczenie |
+|---------|-----------|-----------|
+| `PUBLIC_API_KEY` | — | ten sam sekret co `JAZDY_API_KEY` na stronie |
+| `PUBLIC_BOOKING_LEAD_HOURS` | `12` | jak wcześnie można zająć termin |
+| `PUBLIC_HOURLY_RATE` | `0` | stawka nowej osoby ze strony, dopóki nie ustawisz jej w panelu |
+
+Zapis tworzy jeźdźca (`source: website`) i jednorazową jazdę. Telefon, mail i opiekun widać przy dziecku oraz w szczegółach slotu. Świeża baza dostaje konie Rychu, Ksenia, Fruzia i Drago. Jeśli w kalendarzu są już inne konie, zmień nazwy w panelu — seed nie nadpisuje istniejącej bazy.

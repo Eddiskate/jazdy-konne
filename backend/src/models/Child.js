@@ -9,6 +9,12 @@ const childSchema = new mongoose.Schema(
       from: { type: String, required: true },
       to: { type: String, required: true },
     },
+    phone: { type: String, default: '', trim: true, maxlength: 20 },
+    email: { type: String, default: '', trim: true, lowercase: true, maxlength: 120 },
+    guardianName: { type: String, default: '', trim: true, maxlength: 60 },
+    note: { type: String, default: '', trim: true, maxlength: 500 },
+    source: { type: String, default: '', trim: true, maxlength: 40 },
+    riderKind: { type: String, enum: ['child', 'adult'], required: false },
   },
   { timestamps: true },
 );

@@ -53,6 +53,9 @@
                 @for (rider of ridersOf(slot.booking); track rider.bookingId + rider.child.id) {
                   <strong>{{ personName(rider.child) }}</strong>
                   <span>{{ rider.horse.name }} · {{ rider.child.hourlyRate }} zł/h</span>
+                  @if (rider.child.source === 'website') {
+                    <em class="badge">ze strony</em>
+                  }
                   <em class="badge" [class.repeat]="rider.recurring">{{ riderRecurrence(rider) }}</em>
                 }
               </button>
@@ -143,6 +146,16 @@
           <li>
             <strong>{{ personName(rider.child) }}</strong>
             <span>{{ rider.horse.name }} · {{ rider.child.hourlyRate }} zł/h</span>
+            @if (rider.child.phone || rider.child.email || rider.child.guardianName) {
+              <span>
+                @if (rider.child.guardianName) { opiekun {{ rider.child.guardianName }} }
+                @if (rider.child.phone) { · {{ rider.child.phone }} }
+                @if (rider.child.email) { · {{ rider.child.email }} }
+              </span>
+            }
+            @if (rider.child.note) {
+              <span>{{ rider.child.note }}</span>
+            }
             <em class="badge" [class.repeat]="rider.recurring">{{ riderRecurrence(rider) }}</em>
             @if (rider.outsideChildPreference) {
               <em>poza preferowanymi godzinami</em>
