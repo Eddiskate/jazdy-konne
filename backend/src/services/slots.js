@@ -24,6 +24,26 @@ export function weekdayKey(dt) {
   return WEEKDAYS[dt.weekday - 1];
 }
 
+export function weekdayHorseIds(instructor, weekday) {
+  const list = instructor?.availableHorsesByWeekday?.[weekday];
+  if (!Array.isArray(list)) return null;
+  return list.map((id) => String(id));
+}
+
+export function filterHorsesForInstructorDay(instructor, startIso, horses) {
+  const day = weekdayKey(parseWarsaw(startIso));
+  const allowed = weekdayHorseIds(instructor, day);
+  if (!allowed) return horses;
+  const set = new Set(allowed);
+  return horses.filter((horse) => set.has(String(horse._id)));
+}
+
+export function horseAllowedOnInstructorDay(instructor, startIso, horseId) {
+  const allowed = weekdayHorseIds(instructor, weekdayKey(parseWarsaw(startIso)));
+  if (!allowed) return true;
+  return allowed.includes(String(horseId));
+}
+
 export function generateSlotsForInstructor(instructor, fromIso, toIso, slotMinutes = SLOT_MINUTES) {
   const slots = [];
   let day = parseWarsaw(fromIso).startOf('day');

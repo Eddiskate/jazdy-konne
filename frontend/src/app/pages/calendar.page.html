@@ -126,6 +126,27 @@
         <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
       }
 
+      <fieldset class="field weekday-horses">
+        <legend>Dostępność koni — {{ weekdayLabel() }}</legend>
+        <div class="horse-checks">
+          @for (horse of weekdayHorseOptions(); track horse._id) {
+            <label class="check compact">
+              <input
+                type="checkbox"
+                [checked]="isWeekdayHorseAllowed(horse._id)"
+                (change)="setWeekdayHorse(horse._id, $any($event.target).checked)"
+                [disabled]="saving"
+                [name]="'wd-horse-new-' + horse._id"
+              />
+              <span>{{ horse.name }}</span>
+            </label>
+          }
+        </div>
+        <p class="muted tiny">
+          Lista powtarza się co tydzień w ten dzień. Odznaczone konie znikną z wyboru przy obsadzaniu i ze strony.
+        </p>
+      </fieldset>
+
       <label class="check">
         <input type="checkbox" [(ngModel)]="blockExtraHorses" name="block-extra-new" />
         <span>Zablokuj dodatkowe konie w tej godzinie</span>
@@ -221,6 +242,27 @@
           </fieldset>
         </fieldset>
       }
+      <fieldset class="field weekday-horses">
+        <legend>Dostępność koni — {{ weekdayLabel() }}</legend>
+        <div class="horse-checks">
+          @for (horse of weekdayHorseOptions(); track horse._id) {
+            <label class="check compact">
+              <input
+                type="checkbox"
+                [checked]="isWeekdayHorseAllowed(horse._id)"
+                (change)="setWeekdayHorse(horse._id, $any($event.target).checked)"
+                [disabled]="saving"
+                [name]="'wd-horse-' + horse._id"
+              />
+              <span>{{ horse.name }}</span>
+            </label>
+          }
+        </div>
+        <p class="muted tiny">
+          Lista powtarza się co tydzień w ten dzień. Odznaczone konie znikną z wyboru przy obsadzaniu i ze strony.
+        </p>
+      </fieldset>
+
       <label class="check">
         <input
           type="checkbox"

@@ -33,6 +33,13 @@ export class ApiService {
     return this.http.delete<{ ok: boolean }>(this.url(`/api/instructors/${id}`));
   }
 
+  setWeekdayHorses(instructorId: string, weekday: string, horseIds: string[] | null): Observable<Instructor> {
+    return this.http.patch<Instructor>(this.url(`/api/instructors/${instructorId}/weekday-horses`), {
+      weekday,
+      horseIds,
+    });
+  }
+
   children(): Observable<Child[]> {
     return this.http.get<Child[]>(this.url('/api/children'));
   }

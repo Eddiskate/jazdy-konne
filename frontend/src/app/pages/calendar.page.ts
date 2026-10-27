@@ -14,7 +14,17 @@ import {
   startOfWeek,
   toIsoDate,
 } from '../date.util';
-import { CalendarSlot, Child, Horse, Instructor, SlotRider, bookingRiders, personName } from '../models';
+import {
+  CalendarSlot,
+  Child,
+  Horse,
+  Instructor,
+  SlotRider,
+  WEEKDAYS,
+  WeekHours,
+  bookingRiders,
+  personName,
+} from '../models';
 
 interface RiderDraft {
   key: number;
@@ -95,6 +105,7 @@ export class CalendarPage implements OnInit {
           ...day,
           slots: response.slots.filter((slot) => slotDateKey(slot.start) === day.key),
         }));
+        this.mergeInstructor(response.instructor);
         this.loading = false;
       },
       error: (error) => {
@@ -372,7 +383,79 @@ export class CalendarPage implements OnInit {
   }
 
   horsesForSelect(selectedId = ''): Horse[] {
-    return this.horses.filter((horse) => horse.available !== false || horse._id === selectedId);
+    const allowed = this.weekdayHorseSet();
+    return this.horses.filter((horse) => {
+      if (horse.available === false && horse._id !== selectedId) return false;
+      if (allowed && !allowed.has(horse._id) && horse._id !== selectedId) return false;
+      return true;
+    });
+  }
+
+  weekdayHorseOptions(): Horse[] {
+    return this.horses.filter((horse) => horse.available !== false);
+  }
+
+  weekdayLabel(iso = this.activeSlotStart()): string {
+    if (!iso) return '';
+    const day = WEEKDAYS.find((item) => item.key === this.weekdayFromIso(iso));
+    return day?.label || '';
+  }
+
+  isWeekdayHorseAllowed(horseId: string): boolean {
+    const allowed = this.weekdayHorseSet();
+    return !allowed || allowed.has(horseId);
+  }
+
+  setWeekdayHorse(horseId: string, checked: boolean): void {
+    const weekday = this.activeWeekday();
+    if (!weekday || !this.instructorId) return;
+    const allIds = this.weekdayHorseOptions().map((horse) => horse._id);
+    const next = new Set(this.weekdayHorseSet() ?? allIds);
+    if (checked) next.add(horseId);
+    else next.delete(horseId);
+    const horseIds = allIds.every((id) => next.has(id)) ? null : allIds.filter((id) => next.has(id));
+    this.saving = true;
+    this.formError = '';
+    this.api.setWeekdayHorses(this.instructorId, weekday, horseIds).subscribe({
+      next: (instructor) => {
+        this.saving = false;
+        this.mergeInstructor(instructor);
+      },
+      error: (error) => {
+        this.saving = false;
+        this.formError = apiErrorMessage(error, 'Nie udało się zapisać dostępności koni.');
+      },
+    });
+  }
+
+  private activeSlotStart(): string {
+    return this.detailSlot?.start || this.bookingSlot?.start || '';
+  }
+
+  private activeWeekday(): keyof WeekHours | '' {
+    const iso = this.activeSlotStart();
+    return iso ? this.weekdayFromIso(iso) : '';
+  }
+
+  private weekdayFromIso(iso: string): keyof WeekHours {
+    return new Date(iso)
+      .toLocaleDateString('en-US', { weekday: 'long', timeZone: 'Europe/Warsaw' })
+      .toLowerCase() as keyof WeekHours;
+  }
+
+  private weekdayHorseSet(): Set<string> | null {
+    const weekday = this.activeWeekday();
+    const instructor = this.instructors.find((item) => item._id === this.instructorId);
+    const list = weekday ? instructor?.availableHorsesByWeekday?.[weekday] : undefined;
+    if (!Array.isArray(list)) return null;
+    return new Set(list.map(String));
+  }
+
+  private mergeInstructor(instructor: Instructor): void {
+    if (!instructor?._id) return;
+    this.instructors = this.instructors.map((item) =>
+      item._id === instructor._id ? { ...item, ...instructor } : item,
+    );
   }
 
   private newPair(): RiderDraft {

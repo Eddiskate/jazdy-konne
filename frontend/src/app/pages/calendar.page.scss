@@ -113,6 +113,26 @@
   font-size: 0.82rem;
 }
 
+.weekday-horses {
+  margin: 16px 0 8px;
+
+  .horse-checks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 12px;
+    margin: 4px 0 2px;
+  }
+
+  .check.compact {
+    margin: 6px 0;
+    font-size: 0.9rem;
+  }
+
+  .muted.tiny {
+    margin: 4px 0 0;
+  }
+}
+
 .pair {
   position: relative;
   border: 1px solid var(--line);

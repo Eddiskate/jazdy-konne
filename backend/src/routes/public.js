@@ -10,6 +10,7 @@ import {
   ZONE,
   bookingOccurrencesOverlapping,
   bookingRiders,
+  filterHorsesForInstructorDay,
   findConflicts,
   generateSlotsForInstructor,
   instructorHasSlot,
@@ -153,8 +154,10 @@ function openSlots(instructors, horses, bookings, from, to, earliest) {
   const rows = [];
   for (const startIso of seen) {
     const start = parseWarsaw(startIso);
-    if (!pickInstructor(instructors, bookings, startIso)) continue;
-    const free = horsesFreeAt(horses, bookings, startIso);
+    const instructor = pickInstructor(instructors, bookings, startIso);
+    if (!instructor) continue;
+    const dayHorses = filterHorsesForInstructorDay(instructor, startIso, horses);
+    const free = horsesFreeAt(dayHorses, bookings, startIso);
     if (!free.length) continue;
     rows.push({
       start: start.toISO(),

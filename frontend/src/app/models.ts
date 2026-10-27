@@ -18,6 +18,8 @@ export interface Instructor {
   firstName: string;
   lastName: string;
   preferredHours: WeekHours;
+  /** brak dnia = wszystkie konie; tablica = tylko te konie w ten dzień tygodnia */
+  availableHorsesByWeekday?: Partial<Record<keyof WeekHours, string[]>>;
 }
 
 export interface Child {

@@ -12,6 +12,7 @@ import { publicRouter } from './routes/public.js';
 import { calendarRouter } from './routes/calendar.js';
 import { financeRouter } from './routes/finance.js';
 import { createCrudRouter } from './routes/crud.js';
+import { instructorsExtraRouter } from './routes/instructors.js';
 import { seedIfEmpty } from './seed.js';
 
 const app = express();
@@ -35,7 +36,7 @@ app.use(
         callback(null, false);
       }
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
   }),
 );
@@ -56,6 +57,7 @@ app.get('/api/health', async (_req, res) => {
   res.json({ ok: true, mongo });
 });
 
+app.use('/api/instructors', instructorsExtraRouter);
 app.use('/api/instructors', createCrudRouter(Instructor, { searchFields: ['firstName', 'lastName'] }));
 app.use('/api/children', createCrudRouter(Child, { searchFields: ['firstName', 'lastName'] }));
 app.use('/api/horses', createCrudRouter(Horse, { searchFields: ['name'] }));

@@ -7,6 +7,7 @@ import { Instructor } from '../models/Instructor.js';
 import {
   SLOT_MINUTES,
   findConflicts,
+  horseAllowedOnInstructorDay,
   instructorHasSlot,
   parseWarsaw,
 } from '../services/slots.js';
@@ -76,6 +77,11 @@ bookingsRouter.post('/', async (req, res, next) => {
 
     if (!instructorHasSlot(instructor, startDt.toISO())) {
       return res.status(400).json({ error: 'Ten termin nie mieści się w godzinach instruktora.' });
+    }
+
+    const blockedHorse = riders.find((rider) => !horseAllowedOnInstructorDay(instructor, startDt.toISO(), rider.horseId));
+    if (blockedHorse) {
+      return res.status(400).json({ error: 'Ten koń nie jest dostępny w ten dzień tygodnia.' });
     }
 
     const drafts = [];
