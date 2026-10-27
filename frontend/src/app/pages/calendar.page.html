@@ -46,9 +46,12 @@
           }
           @for (slot of day.slots; track slot.start) {
             @if (slot.booking) {
-              <button type="button" class="slot filled" (click)="openDetail(slot)">
+              <button type="button" class="slot filled" [class.locked]="slot.booking.blockExtraHorses" (click)="openDetail(slot)">
                 <div class="slot-top">
                   <time>{{ formatTime(slot.start) }}</time>
+                  @if (slot.booking.blockExtraHorses) {
+                    <em class="badge lock">1 koń</em>
+                  }
                 </div>
                 @for (rider of ridersOf(slot.booking); track rider.bookingId + rider.child.id) {
                   <strong>{{ personName(rider.child) }}</strong>
@@ -119,7 +122,15 @@
         </fieldset>
       }
 
-      <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
+      @if (!blockExtraHorses) {
+        <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
+      }
+
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="blockExtraHorses" name="block-extra-new" />
+        <span>Zablokuj dodatkowe konie w tej godzinie</span>
+      </label>
+      <p class="muted tiny">Lonża albo konie, które nie powinny jeździć razem — termin zniknie też ze strony, gdy zajęty.</p>
 
       @if (formError) {
         <p class="banner error">{{ formError }}</p>
@@ -210,7 +221,27 @@
           </fieldset>
         </fieldset>
       }
-      <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
+      <label class="check">
+        <input
+          type="checkbox"
+          [ngModel]="blockExtraHorses"
+          (ngModelChange)="setBlockExtra($event)"
+          [disabled]="saving"
+          name="block-extra-detail"
+        />
+        <span>Zablokuj dodatkowe konie w tej godzinie</span>
+      </label>
+      <p class="muted tiny">
+        @if (blockExtraHorses) {
+          Termin jest tylko dla jednego konia. Na stronie nie pojawi się jako wolny.
+        } @else {
+          Lonża albo konie, które się nie lubią — po włączeniu nie dodasz kolejnego zestawu, a strona nie pokaże wolnych koni w tej godzinie.
+        }
+      </p>
+
+      @if (!blockExtraHorses) {
+        <button type="button" class="text add-pair" (click)="addPair()">+ Dodaj kolejne</button>
+      }
       @if (extraPairs.length) {
         <button type="button" class="button save-extra" [disabled]="saving" (click)="saveExtraRiders()">
           {{ saving ? 'Zapisywanie…' : 'Zapisz zestawy' }}

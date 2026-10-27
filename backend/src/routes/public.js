@@ -8,7 +8,7 @@ import { Instructor } from '../models/Instructor.js';
 import {
   SLOT_MINUTES,
   ZONE,
-  bookingOccursAt,
+  bookingOccurrencesOverlapping,
   bookingRiders,
   findConflicts,
   generateSlotsForInstructor,
@@ -91,19 +91,28 @@ function dateWindow(query) {
 }
 
 function horsesFreeAt(horses, bookings, startIso) {
+  const slotStart = parseWarsaw(startIso);
+  const slotEnd = slotStart.plus({ minutes: SLOT_MINUTES });
   const busy = new Set();
   for (const booking of bookings) {
-    if (!bookingOccursAt(booking, startIso)) continue;
+    const hits = bookingOccurrencesOverlapping(booking, slotStart, slotEnd);
+    if (!hits.length) continue;
+    // Blokada godziny dotyczy okna, w którym zaczyna się jazda (np. lonża o 16:30 → 16:00–17:00).
+    if (booking.blockExtraHorses && hits.some((hit) => hit >= slotStart && hit < slotEnd)) {
+      return [];
+    }
     for (const rider of bookingRiders(booking)) busy.add(String(rider.horseId));
   }
   return horses.filter((horse) => !busy.has(String(horse._id)));
 }
 
 function riderLoad(instructor, bookings, startIso) {
+  const slotStart = parseWarsaw(startIso);
+  const slotEnd = slotStart.plus({ minutes: SLOT_MINUTES });
   let count = 0;
   for (const booking of bookings) {
     if (String(booking.instructorId) !== String(instructor._id)) continue;
-    if (!bookingOccursAt(booking, startIso)) continue;
+    if (!bookingOccurrencesOverlapping(booking, slotStart, slotEnd).length) continue;
     count += Math.max(1, bookingRiders(booking).length);
   }
   return count;

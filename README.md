@@ -60,3 +60,5 @@ Nagłówek: `X-API-Key: PUBLIC_API_KEY` (minimum 16 znaków). Bez klucza endpoin
 Zapis tworzy jeźdźca (`source: website`) i jednorazową jazdę. Telefon, mail i opiekun widać przy dziecku oraz w szczegółach slotu. Świeża baza dostaje konie Rychu, Ksenia, Fruzia i Drago. Jeśli w kalendarzu są już inne konie, zmień nazwy w panelu — seed nie nadpisuje istniejącej bazy.
 
 Koń z wyłączonym „Dostępny w kalendarzu jazd” nie wraca w `/api/public/slots` ani w nowych zapisach ze strony; w planerze też nie jest wybierany (chyba że już był w istniejącej jeździe).
+
+W szczegółach jazdy (albo przy obsadzaniu) jest opcja **„Zablokuj dodatkowe konie w tej godzinie”** — na lonżę albo konie, które nie powinny jeździć razem. Wtedy nie dodasz kolejnego zestawu, a publiczne API nie pokaże wolnych koni w nakładającym się oknie (termin znika ze strony).

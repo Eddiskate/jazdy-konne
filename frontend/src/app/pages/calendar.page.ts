@@ -54,6 +54,7 @@ export class CalendarPage implements OnInit {
   detailSlot: CalendarSlot | null = null;
   pairs: RiderDraft[] = [];
   extraPairs: RiderDraft[] = [];
+  blockExtraHorses = false;
   saving = false;
   formError = '';
   private pairKey = 1;
@@ -122,10 +123,15 @@ export class CalendarPage implements OnInit {
     this.bookingSlot = slot;
     this.detailSlot = null;
     this.pairs = [this.newPair()];
+    this.blockExtraHorses = false;
     this.formError = '';
   }
 
   addPair(): void {
+    if (this.detailSlot?.booking?.blockExtraHorses) {
+      this.formError = 'Ten termin jest zablokowany na jednego konia.';
+      return;
+    }
     if (this.detailSlot) {
       this.extraPairs = [...this.extraPairs, this.newPair()];
       return;
@@ -146,6 +152,7 @@ export class CalendarPage implements OnInit {
     this.detailSlot = slot;
     this.bookingSlot = null;
     this.extraPairs = [];
+    this.blockExtraHorses = Boolean(slot.booking?.blockExtraHorses);
     this.formError = '';
   }
 
@@ -153,6 +160,7 @@ export class CalendarPage implements OnInit {
     this.bookingSlot = null;
     this.detailSlot = null;
     this.extraPairs = [];
+    this.blockExtraHorses = false;
     this.formError = '';
     this.saving = false;
   }
@@ -161,6 +169,10 @@ export class CalendarPage implements OnInit {
     const riders = this.toPayload(this.pairs);
     if (!this.bookingSlot || !this.instructorId || !riders.length) {
       this.formError = 'Wybierz dziecko i konia.';
+      return;
+    }
+    if (this.blockExtraHorses && riders.length > 1) {
+      this.formError = 'Przy blokadzie dodatkowych koni zostaw tylko jeden zestaw.';
       return;
     }
     const error = this.duplicateError(riders);
@@ -175,6 +187,7 @@ export class CalendarPage implements OnInit {
         instructorId: this.instructorId,
         start: this.bookingSlot.start,
         riders,
+        blockExtraHorses: this.blockExtraHorses,
       })
       .subscribe({
         next: () => {
@@ -190,6 +203,10 @@ export class CalendarPage implements OnInit {
 
   saveExtraRiders(): void {
     if (!this.detailSlot || !this.instructorId) return;
+    if (this.detailSlot.booking?.blockExtraHorses) {
+      this.formError = 'Ten termin jest zablokowany na jednego konia.';
+      return;
+    }
     const existing = bookingRiders(this.detailSlot.booking);
     const added = this.toPayload(this.extraPairs);
     if (!added.length) {
@@ -223,6 +240,40 @@ export class CalendarPage implements OnInit {
           this.formError = apiErrorMessage(err, 'Nie udało się dodać zestawu.');
         },
       });
+  }
+
+  setBlockExtra(value: boolean): void {
+    if (!this.detailSlot?.booking) return;
+    const riders = bookingRiders(this.detailSlot.booking);
+    if (value && riders.length > 1) {
+      this.formError = 'Najpierw zostaw w terminie tylko jedną jazdę — potem możesz zablokować dodatkowe konie.';
+      this.blockExtraHorses = false;
+      return;
+    }
+    this.saving = true;
+    this.formError = '';
+    this.api.setBlockExtraHorses(this.detailSlot.booking.id, value).subscribe({
+      next: () => {
+        this.saving = false;
+        this.blockExtraHorses = value;
+        if (this.detailSlot?.booking) {
+          this.detailSlot.booking.blockExtraHorses = value;
+        }
+        for (const day of this.days) {
+          for (const slot of day.slots) {
+            if (slot.start === this.detailSlot?.start && slot.booking) {
+              slot.booking.blockExtraHorses = value;
+            }
+          }
+        }
+        this.extraPairs = [];
+      },
+      error: (err) => {
+        this.saving = false;
+        this.blockExtraHorses = !value;
+        this.formError = apiErrorMessage(err, 'Nie udało się zmienić blokady.');
+      },
+    });
   }
 
   cancelRider(rider: SlotRider): void {

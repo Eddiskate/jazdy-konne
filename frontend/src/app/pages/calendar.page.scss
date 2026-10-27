@@ -92,6 +92,11 @@
     &:hover {
       background: #e3eee3;
     }
+
+    &.locked {
+      border-color: #c4a574;
+      background: #f3ebe0;
+    }
   }
 }
 
@@ -101,6 +106,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 6px;
+}
+
+.muted.tiny {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
 }
 
 .pair {
@@ -170,6 +180,11 @@
   &.repeat {
     background: #dce8c8;
     color: #3d4f1f;
+  }
+
+  &.lock {
+    background: #ead7b8;
+    color: #5c4318;
   }
 }
 

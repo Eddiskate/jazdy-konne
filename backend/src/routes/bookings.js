@@ -92,6 +92,7 @@ bookingsRouter.post('/', async (req, res, next) => {
         recurrence: parsed.value,
         cancelledDates: [],
         seriesEndedAt: null,
+        blockExtraHorses: Boolean(req.body.blockExtraHorses),
       });
     }
 
@@ -114,6 +115,44 @@ bookingsRouter.post('/', async (req, res, next) => {
 
     const bookings = await Booking.insertMany(drafts);
     res.status(201).json(bookings);
+  } catch (error) {
+    next(error);
+  }
+});
+
+bookingsRouter.patch('/:id/block-extra', async (req, res, next) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Nie znaleziono jazdy.' });
+
+    const value = Boolean(req.body.blockExtraHorses);
+    if (value) {
+      const others = await Booking.find({
+        instructorId: booking.instructorId,
+        start: booking.start,
+        _id: { $ne: booking._id },
+        $or: [{ seriesEndedAt: null }, { seriesEndedAt: { $gt: booking.start } }],
+      });
+      const activeOthers = others.filter((item) => {
+        if (item.seriesEndedAt && parseWarsaw(item.seriesEndedAt) <= parseWarsaw(booking.start)) {
+          return false;
+        }
+        return true;
+      });
+      if (activeOthers.length) {
+        return res.status(409).json({
+          error: 'Najpierw zostaw w terminie tylko jedną jazdę — potem możesz zablokować dodatkowe konie.',
+        });
+      }
+    }
+
+    await Booking.updateMany(
+      { instructorId: booking.instructorId, start: booking.start },
+      { $set: { blockExtraHorses: value } },
+    );
+
+    const updated = await Booking.findById(booking._id);
+    res.json(updated);
   } catch (error) {
     next(error);
   }

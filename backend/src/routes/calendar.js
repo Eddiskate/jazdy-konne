@@ -89,6 +89,7 @@ calendarRouter.get('/', async (req, res, next) => {
           intervalDays: first?.intervalDays || null,
           seriesStart: matches[0].start,
           outsideChildPreference: riders.some((rider) => rider.outsideChildPreference),
+          blockExtraHorses: matches.some((match) => Boolean(match.blockExtraHorses)),
         },
       };
     });

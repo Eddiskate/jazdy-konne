@@ -71,6 +71,7 @@ export interface SlotBooking {
   intervalDays: number | null;
   seriesStart: string;
   outsideChildPreference: boolean;
+  blockExtraHorses?: boolean;
 }
 
 export function bookingRiders(booking: SlotBooking | null | undefined): SlotRider[] {

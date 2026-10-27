@@ -79,10 +79,15 @@ export class ApiService {
       horseId: string;
       recurrence: { type: 'none' } | { type: 'interval'; intervalDays: number };
     }[];
+    blockExtraHorses?: boolean;
   }) {
     return this.http.post(this.url('/api/bookings'), payload).pipe(
       catchError((error) => throwError(() => error)),
     );
+  }
+
+  setBlockExtraHorses(bookingId: string, blockExtraHorses: boolean) {
+    return this.http.patch(this.url(`/api/bookings/${bookingId}/block-extra`), { blockExtraHorses });
   }
 
   cancelOccurrence(bookingId: string, date: string) {

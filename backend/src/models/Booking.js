@@ -22,6 +22,8 @@ const bookingSchema = new mongoose.Schema(
     },
     cancelledDates: { type: [Date], default: [] },
     seriesEndedAt: { type: Date, default: null },
+    /** true = w tej godzinie nie wolno dodać kolejnych koni / jazd (lonża, konie które się nie lubią) */
+    blockExtraHorses: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

@@ -146,6 +146,24 @@ export function bookingRiders(booking) {
   return [];
 }
 
+export function rangesOverlap(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+export function bookingDuration(booking) {
+  return booking?.durationMinutes || SLOT_MINUTES;
+}
+
+/** Wystąpienia jazdy, które nakładają się na okno [windowStart, windowEnd). */
+export function bookingOccurrencesOverlapping(booking, windowStart, windowEnd) {
+  const from = windowStart.minus({ minutes: bookingDuration(booking) });
+  return expandOccurrences(booking, windowEnd.toISO()).filter((occurrence) => {
+    if (occurrence < from.startOf('day')) return false;
+    const end = occurrence.plus({ minutes: bookingDuration(booking) });
+    return rangesOverlap(occurrence, end, windowStart, windowEnd);
+  });
+}
+
 export function findConflicts(newBooking, existingBookings, untilIso) {
   const newOccurrences = expandOccurrences(newBooking, untilIso);
   const newRiders = bookingRiders(newBooking);
@@ -167,6 +185,23 @@ export function findConflicts(newBooking, existingBookings, untilIso) {
     for (const next of newOccurrences) {
       for (const taken of existingOccurrences) {
         if (!sameInstant(next, taken)) continue;
+
+        if (existing.blockExtraHorses) {
+          conflicts.push({
+            type: 'exclusive',
+            at: next.toISO(),
+            message: 'Ten termin jest zablokowany na jednego konia — nie wolno dodać kolejnej jazdy.',
+          });
+          continue;
+        }
+        if (newBooking.blockExtraHorses && existingRiders.length) {
+          conflicts.push({
+            type: 'exclusive',
+            at: next.toISO(),
+            message: 'Nie można zablokować godziny — są już inne jazdy w tym terminie.',
+          });
+          continue;
+        }
 
         for (const rider of newRiders) {
           if (existingRiders.some((takenRider) => String(takenRider.childId) === String(rider.childId))) {
